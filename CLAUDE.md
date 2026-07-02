@@ -29,6 +29,52 @@
 
 → これだけで、4章の文章・最終画面・色・背景・ボタンは全部あなたが決められる。フォント等は基本おまかせ（こだわりがあれば聞く）。
 
+**さらに：形・フォント・色も、回答からあなたがテーマに合わせて設計する**（下の「デザインの引き出し」）。ユーザーに専門的な選択はさせない。要約確認のときに「粒子は 🍞パンの形→葉→…と変化させます」のように一言添えると喜ばれる。
+
+---
+
+## デザインの引き出し（ヒアリング回答 → あなたが選ぶ）
+
+### 章ごとの粒子の形（`chapters[].shape` / `join.shape`）
+スクロールごとに数万粒の光が集まってこの形になる。**4章のストーリー展開に合わせて選ぶ。**
+
+| spec | 形 | 合う文脈の例 |
+|---|---|---|
+| `sphere` | 球 | つながり・世界・はじまり |
+| `dna` | 二重螺旋 | 仕組み・本質・生命 |
+| `grid` | 歪む格子 | 構造・システム・テック |
+| `helix` | 昇る螺旋 | 成長・上昇 |
+| `hourglass` | 砂時計 | 収束・決断・時間 |
+| `torus` | 輪 | 循環・コミュニティ・縁 |
+| `heart` | ハート | 愛情・ケア・共感 |
+| `leaf` | 葉 | 自然・オーガニック・癒し |
+| `flower` | 花 | 美容・開花・華やぎ |
+| `wave` | 波 | 海・流れ・自由 |
+| `galaxy` | 渦巻銀河 | 夢・スケール・未知 |
+| `mountain` | 山 | 挑戦・目標・登頂 |
+| `crystal` | 結晶 | 価値・磨き・プレミアム |
+| `tornado` | 渦 | 勢い・変革 |
+| `moon` | 三日月 | 夜・静けさ |
+| `star` | 星 | 目標・輝き |
+| `cup` | カップ | カフェ・おもてなし |
+| `emoji:🍞` | **任意の絵文字シルエット** | **具体物はこれが最強**（🥐パン屋・🍰菓子・☕カフェ・🧘ヨガ・✂️美容室・🐟鮮魚・🎸音楽…） |
+| `text:WORD` | 単語シルエット | キーワードを見せたい時（英字短め） |
+
+選び方：①具体物のある商売→その絵文字を1〜2章に必ず入れる ②抽象の章（痛み・決意）→sphere/hourglass/galaxy等 ③JOINは収束系（hourglass/heart/torus/star）が締まる。全部絵文字にすると安っぽい。**具体物2＋抽象2くらいのバランス**が上質。
+
+### フォント（`fonts`）
+- `fonts.hero3d`（FVの3D立体文字）：`helvetiker`=標準ゴシック／`optimer`=モダン／`gentilis`=**セリフ・上品・オーガニック**／`droid-sans`／`droid-serif`。和風・自然・高級→gentilis、テック→helvetiker。
+- `fonts.display`（章見出し）・`fonts.serif`（本文）：Google Fontsを`fonts.google`配列に追加して指定。目安：テック→`'Orbitron:wght@700'`/`'Chakra Petch:wght@700'`、上品→`'Cormorant Garamond:wght@600'`/`'Fraunces:opsz,wght@9..144,600'`、やさしい→`'Zen Maru Gothic:wght@700'`、力強い→そのままAnton。
+- `join.font`も同様（そのフォントをgoogleに追加するのを忘れない）。
+
+### 配色（`palette` ＋ `tints`）
+- `tints`＝6章分の`[背景色, アクセント色]`。ユーザーの「色・雰囲気」の答えから組む（夜青系／自然の緑〜金／温かいオレンジ〜赤／上品な紫〜金 等。**全章同系でまとめ、1章だけ温度を変える**と映画っぽい）。
+- `palette.accent/accent2/accent3`＝UIの差し色（HUD・進捗バー等）。`palette.cta/ctaInk`＝ボタンの背景/文字色（LINE誘導なら緑のまま、それ以外はテーマ色に）。
+- CTAボタン・JOIN見出しのグラデ・FVのエッジ発光色は、palette/tintsから**自動で**テーマに揃う。
+
+### 背景（`background`）
+`grid-all`=近未来グリッド／`grid-hero`=FVだけグリッド→星雲／`nebula`=幻想星雲／`field`=自然・畑（畝＋朝焼け）。テック→grid、幻想・夜→nebula、自然・食・癒し→field。
+
 作り終わったら、必ず**確認と公開の手順**（下記）を案内する。
 
 ---
@@ -47,11 +93,14 @@
 | `brand` | FVの立体文字・ヘッダー・フッター・タブ名 | **英字・短めが映える**（NOVA 等）。日本語も可 |
 | `tagline` | 左上の小さいコピー | 一言 |
 | `hero.sub` | FV下のサブ文 | 1行。約束を短く |
-| `chapters[]` | 4章（順に：痛み→再定義→解決→証拠）。`title`(英大文字)・`idx`・`label`・`accent`(色)・`body`(本文, 改行`<br>`) | 文章はあなたが書く |
+| `chapters[]` | 4章（順に：痛み→再定義→解決→証拠）。`title`(英大文字)・`idx`・`label`・`accent`(色)・`shape`(粒子の形)・`body`(本文, 改行`<br>`) | 文章はあなたが書く。形は「デザインの引き出し」から |
 | `join.heading` | 最終画面の見出し（改行`<br>`） | 例 `JOIN THE<br>NOVA` |
-| `join.font` | 見出しフォント | 変えたら `<head>` の Google Fonts `<link>` にも足す |
+| `join.font` | 見出しフォント | 変えたら `fonts.google` にも足す |
+| `join.shape` | 最終画面の粒子の形 | 収束系（hourglass/heart/torus/star）が締まる |
 | `join.body` | 最終画面の本文 | |
 | `join.ctaText` / `join.ctaUrl` | ボタンの文言 / 飛び先URL | URLが無ければ `'#'`（後で差し替え可）と伝える |
+| `fonts` | `google[]`(追加読込)・`display`(見出し)・`serif`(本文)・`hero3d`(FV立体文字) | 「デザインの引き出し」参照 |
+| `palette` | `accent/accent2/accent3`(UI差し色)・`cta/ctaInk`(ボタン色) | CTAとJOINグラデは自動でテーマに揃う |
 | `footer` | フッター文 | HTMLタグ可 |
 | `background` | 背景モード | `'grid-all'` / `'grid-hero'` / `'nebula'` / `'field'`(自然・畑) |
 | `tints` | 各章の色 `[背景, アクセント]` を6組（16進 `0x......`） | 順に HERO/CONNECTION/ALGORITHM/IGNITION/VOICE/JOIN。相手の"色"の答えから決める |

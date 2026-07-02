@@ -101,11 +101,11 @@
   .join{align-items:center;text-align:center;justify-content:flex-end;padding-bottom:calc(100vh + clamp(60px,10vh,120px))}
   .join h2{font-family:'Syncopate',sans-serif;font-weight:700;font-size:clamp(26px,7.4vw,112px);line-height:1.14;letter-spacing:.11em;background:linear-gradient(120deg,#fff,#6fe9cf 46%,#2fd6a0 76%,#8ff0ff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 34px rgba(61,240,192,.28));text-indent:.11em}
   .join p{font-family:var(--serif);font-style:italic;font-size:clamp(16px,2.1vw,24px);color:var(--ink);margin-top:14px;max-width:24ch;text-shadow:0 2px 26px rgba(0,0,0,.92)}
-  .line-cta{margin-top:28px;display:inline-flex;align-items:center;gap:13px;background:var(--line-green);color:#03361b;font-family:var(--sans);font-weight:700;font-size:16px;padding:19px 36px;border-radius:60px;text-decoration:none;box-shadow:0 18px 56px rgba(6,199,85,.3);transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s;position:relative}
-  .line-cta:hover{box-shadow:0 26px 70px rgba(6,199,85,.5)}
+  .line-cta{margin-top:28px;display:inline-flex;align-items:center;gap:13px;background:var(--cta,var(--line-green));color:var(--cta-ink,#03361b);font-family:var(--sans);font-weight:700;font-size:16px;padding:19px 36px;border-radius:60px;text-decoration:none;box-shadow:0 18px 56px var(--cta-sh,rgba(6,199,85,.3));transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s;position:relative}
+  .line-cta:hover{box-shadow:0 26px 70px var(--cta-sh2,rgba(6,199,85,.5))}
   .line-cta small{display:block;font-weight:400;font-size:11px;opacity:.72}
-  .line-cta .pulse{width:9px;height:9px;border-radius:50%;background:#03361b;box-shadow:0 0 0 0 rgba(3,54,27,.5);animation:pl 2s infinite}
-  @keyframes pl{0%{box-shadow:0 0 0 0 rgba(3,54,27,.5)}70%{box-shadow:0 0 0 10px rgba(3,54,27,0)}100%{box-shadow:0 0 0 0 rgba(3,54,27,0)}}
+  .line-cta .pulse{width:9px;height:9px;border-radius:50%;background:var(--cta-ink,#03361b);box-shadow:0 0 0 0 var(--cta-pl,rgba(3,54,27,.5));animation:pl 2s infinite}
+  @keyframes pl{0%{box-shadow:0 0 0 0 var(--cta-pl,rgba(3,54,27,.5))}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
   footer{position:relative;z-index:10;border-top:1px solid var(--line);padding:clamp(44px,8vh,90px) clamp(20px,6vw,90px) 90px;background:linear-gradient(180deg,transparent,rgba(4,4,6,.92))}
   .fg{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;font-family:var(--mono);font-size:12px;color:var(--dim)}
   .fg .big{font-family:var(--disp);font-size:clamp(36px,7vw,76px);color:var(--ink);line-height:.9;letter-spacing:.03em}
@@ -206,24 +206,37 @@
     location: 'N 35.6762° / E 139.6503°',              // 左下の座標風テキスト（飾り）
     preloader: 'WEAVING WORLDS',                       // ローディング中の文字
     hero: { sub: '凡人だからこそできる最強の戦術を。' },   // FVのサブ文
-    // 4つの章（スクロール順）。accent=見出し上の小見出しの色
+    // 4つの章（スクロール順）。accent=小見出しの色 / shape=粒子が集まる形（下の「形ライブラリ」参照。'emoji:🍞' で任意の絵文字シルエットにもなる）
     chapters: [
-      { label:'Chapter 01 — Connection', idx:'01', title:'CONNECTION', accent:'var(--cyan)',
+      { label:'Chapter 01 — Connection', idx:'01', title:'CONNECTION', accent:'var(--cyan)', shape:'sphere',
         body:'足りないのは新しいノウハウじゃない。<br>ノウハウコレクターから卒業しろ。' },
-      { label:'Chapter 02 — Algorithm', idx:'02', title:'ALGORITHM', accent:'var(--violet)',
+      { label:'Chapter 02 — Algorithm', idx:'02', title:'ALGORITHM', accent:'var(--violet)', shape:'dna',
         body:'Threadsをハックしろ。<br>プラットフォームに踊らされるな。' },
-      { label:'Chapter 03 — Ignition', idx:'03', title:'IGNITION', accent:'var(--amber)',
+      { label:'Chapter 03 — Ignition', idx:'03', title:'IGNITION', accent:'var(--amber)', shape:'grid',
         body:'マネタイズに才能はいらない。<br>必要なのはやる気と少しの知識のみ。' },
-      { label:'Chapter 04 — Voice', idx:'04', title:'VOICE', accent:'var(--green)',
+      { label:'Chapter 04 — Voice', idx:'04', title:'VOICE', accent:'var(--green)', shape:'helix',
         body:'売れないまま終わるか。<br>片手間で売れる側に来るか。' },
     ],
     join: {
       heading: 'JOIN THE<br>SUKEADS',                  // 最終セクションの見出し
-      font: "'Syncopate',sans-serif",                 // ※別フォントにする時は<head>のGoogle Fontsリンクにも追加する
+      font: "'Syncopate',sans-serif",                 // ※別フォントにする時は fonts.google にも追加する
+      shape: 'hourglass',                             // 最終画面の粒子の形
       body: '準備はできたか？<br>ようこそ。<br>AI×Threadsの極地へ',
       ctaText: '無料でプレゼントを受け取る',
       ctaUrl: 'https://line.me/R/ti/p/%40570qdjfq',    // ← LINE誘導先URL（%40=@。'#'にすると動かないボタンに戻る）
     },
+    /* 形ライブラリ（shapeに指定できる名前）：
+       sphere球 dna二重螺旋 grid格子 helix螺旋 hourglass砂時計 torus輪 heartハート leaf葉 flower花 wave波
+       galaxy銀河 mountain山 crystal結晶 tornado渦 moon三日月 star星 cupカップ
+       'emoji:🍞' 任意の絵文字シルエット（パン・ケーキ・コーヒー等の"具体物"はこれが最強） / 'text:WORD' 単語シルエット */
+    fonts: {
+      google: [],                                      // 追加で読み込むGoogle Fonts（例 'Orbitron:wght@700'）
+      display: "'Anton',sans-serif",                  // 見出し（章タイトル・番号・ブランド表示）
+      serif: "'Fraunces',Georgia,serif",              // 本文（章の文章）
+      hero3d: 'helvetiker',                            // FVの立体文字: helvetiker(ゴシック)/optimer/gentilis(セリフ=上品)/droid-sans/droid-serif
+    },
+    // UIの差し色とCTAボタン色。accent=HUD/プリロータ等の金色ポジション
+    palette: { accent:'#ffc46b', accent2:'#6fe9ff', accent3:'#ff7a18', cta:'#06c755', ctaInk:'#03361b' },
     footer: 'What if I told you — <b>Claude made this.</b>',
     background: 'grid-all',                            // 'grid-all'(全章グリッド) / 'grid-hero'(FVのみ) / 'nebula'(星雲のみ) / 'field'(自然・畑)
     // 各章の色 [背景A, アクセントB]（HERO / CONNECTION / ALGORITHM / IGNITION / VOICE / JOIN の6つ）
@@ -231,9 +244,27 @@
   };
   /* ▲▲▲ CONFIGここまで ▲▲▲ */
 
-  // CONFIG → DOMへ流し込み（文言・色・フォント・CTA）。3D側は CONFIG.brand / CONFIG.tints / CONFIG.background を直接参照
+  // CONFIG → DOMへ流し込み（文言・色・フォント・CTA）。3D側は CONFIG.brand / CONFIG.tints / CONFIG.background / shape を直接参照
+  const _hx=v=>'#'+(v&0xffffff).toString(16).padStart(6,'0');
+  const _rgb=h=>{const a=parseInt(h.slice(1),16);return [(a>>16)&255,(a>>8)&255,a&255];};
+  const _mix=(h1,h2,t)=>{const a=_rgb(h1),b=_rgb(h2);return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
+  const _rgba=(h,al)=>{const a=_rgb(h);return `rgba(${a[0]},${a[1]},${a[2]},${al})`;};
   function applyConfig(){const C=CONFIG,q=s=>document.querySelector(s);
     try{
+      // fonts: Google Fonts追加読込 + 見出し/本文フォントのCSS変数差し替え
+      const R=document.documentElement.style;
+      if(C.fonts){
+        if(C.fonts.google&&C.fonts.google.length){const l=document.createElement('link');l.rel='stylesheet';
+          l.href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
+        if(C.fonts.display)R.setProperty('--disp',C.fonts.display);
+        if(C.fonts.serif)R.setProperty('--serif',C.fonts.serif);}
+      // palette: UI差し色（--gold/--cyan/--amber）とCTAボタン色
+      if(C.palette){
+        if(C.palette.accent)R.setProperty('--gold',C.palette.accent);
+        if(C.palette.accent2)R.setProperty('--cyan',C.palette.accent2);
+        if(C.palette.accent3)R.setProperty('--amber',C.palette.accent3);
+        if(C.palette.cta){R.setProperty('--cta',C.palette.cta);R.setProperty('--cta-ink',C.palette.ctaInk||'#08210f');
+          R.setProperty('--cta-sh',_rgba(C.palette.cta,.3));R.setProperty('--cta-sh2',_rgba(C.palette.cta,.5));R.setProperty('--cta-pl',_rgba(C.palette.ctaInk||'#08210f',.5));}}
       document.title=C.brand+' — Woven Worlds';
       const b=q('.brand'); if(b&&b.lastChild)b.lastChild.nodeValue=C.brand;
       const h1=q('.hero h1'); if(h1)h1.textContent=C.brand;
@@ -247,7 +278,11 @@
         const idx=sec.querySelector('.idx'); if(idx)idx.textContent=cc.idx;
         const h2=sec.querySelector('h2'); if(h2)h2.textContent=cc.title;
         const p=sec.querySelector('p'); if(p)p.innerHTML=cc.body;});
-      const jh=q('#join h2'); if(jh){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;}
+      const jh=q('#join h2'); if(jh){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;
+        // JOIN見出しのグラデ＆グローを tints[JOIN] のアクセント色から自動生成（世界観と自動で揃う）
+        const jc=_hx(C.tints[5][1]);
+        jh.style.backgroundImage=`linear-gradient(120deg,#ffffff,${_mix(jc,'#ffffff',0.45)} 46%,${jc} 76%,${_mix(jc,'#ffffff',0.6)})`;
+        jh.style.filter=`drop-shadow(0 0 34px ${_rgba(jc,0.30)})`;}
       const jp=q('#join p'); if(jp)jp.innerHTML=C.join.body;
       const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1])sp[1].textContent=C.join.ctaText;
         if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}}
@@ -352,29 +387,86 @@
   const _CZ=Math.cos(-0.34),_SZ=Math.sin(-0.34);
   const hh=(n)=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);};
   for(let i=0;i<N;i++){
-    const r1=hh(i+0.13),r2=hh(i*1.7+2.3),r3=hh(i*2.9+5.1),r4=hh(i*0.7+9.2),r5=hh(i*3.3+1.1),r6=hh(i*5.1+0.9);
-    const z0=r1*2-1,ph0=r2*6.2832,sr=Math.sqrt(Math.max(0,1-z0*z0)),dx=sr*Math.cos(ph0),dy=z0,dz=sr*Math.sin(ph0);
-    aRand[i*3]=dx;aRand[i*3+1]=dy;aRand[i*3+2]=dz;aSeed[i]=r3;
-    const jx=(r4-0.5),jy=(r5-0.5),jz=(r6-0.5);
-    // idx0 HERO は「THREADS」の文字（粒子）→ ループ後の buildText() で a0 に充填
-    // idx1 sphere (CONNECTION): フィボナッチ球の発光ダスト
-    {const yy=1-2*((i+0.5)/N),rr=Math.sqrt(Math.max(0,1-yy*yy)),phi=i*2.399963267,R=2.55+jx*0.7;a1[i*3]=rr*Math.cos(phi)*R;a1[i*3+1]=yy*R;a1[i*3+2]=rr*Math.sin(phi)*R;}
-    // idx2 DNA (ALGORITHM): 2本のバックボーン束＋base-pairはしご（DNA＝生命のアルゴリズム）
-    {const TW=2.5,H=9.0,off=2.3,R=1.62;let x,y,zz;
-     if(r2<0.18){const f=r4,ang=f*TW*6.2832,u=r5,ax=Math.cos(ang)*R,az=Math.sin(ang)*R,bx=Math.cos(ang+off)*R,bz=Math.sin(ang+off)*R;x=ax+(bx-ax)*u+jx*0.10;y=(f-0.5)*H;zz=az+(bz-az)*u+jz*0.10;}
-     else{const which=i&1,t=r1,th=t*TW*6.2832+which*off,RR=R+jx*0.16;x=Math.cos(th)*RR;y=(t-0.5)*H+jy*0.10;zz=Math.sin(th)*RR;}
-     a2[i*3]=x*_CZ-y*_SZ;a2[i*3+1]=x*_SZ+y*_CZ;a2[i*3+2]=zz;}
-    // idx3 warped grid (IGNITION): 歪む格子。遷移時の散布(scatter)で点火・拡散感を出す
-    {let x=(r1-0.5)*7.0,y=(r2-0.5)*6.4;const z2=Math.sin(x*1.3+y*1.05)*0.72,a=Math.hypot(x,y)*0.17,c=Math.cos(a),s2=Math.sin(a);a3[i*3]=x*c-y*s2;a3[i*3+1]=x*s2+y*c;a3[i*3+2]=z2+jz*0.4;}
-    // idx4 helix (VOICE): 細い二重螺旋が昇る
-    {const TW=3.0,H=6.4,off=Math.PI,R=1.5+jx*0.12,which=i&1,t=r1,th=t*TW*6.2832+which*off;a4[i*3]=Math.cos(th)*R;a4[i*3+1]=(t-0.5)*H+jy*0.10;a4[i*3+2]=Math.sin(th)*R;}
-    // idx5 hourglass (JOIN): 砂時計のくびれ(=ジェム)へ収束
-    {const yy=(r1-0.5)*5.6,rr=0.06+Math.abs(yy)*0.74,a=r2*6.2832;a5[i*3]=Math.cos(a)*rr+jx*0.05;a5[i*3+1]=yy;a5[i*3+2]=Math.sin(a)*rr+jz*0.05;}
+    const r1=hh(i+0.13),r2=hh(i*1.7+2.3),r3=hh(i*2.9+5.1);
+    const z0=r1*2-1,ph0=r2*6.2832,sr=Math.sqrt(Math.max(0,1-z0*z0));
+    aRand[i*3]=sr*Math.cos(ph0);aRand[i*3+1]=z0;aRand[i*3+2]=sr*Math.sin(ph0);aSeed[i]=r3;
   }
+  // ================= 形ライブラリ =================
+  // 各章の粒子が集まる形。CONFIG.chapters[].shape / CONFIG.join.shape で選ぶ。
+  // 'emoji:🍞' / 'text:WORD' は canvasに描いてシルエットを粒子サンプリング（具体物はこれが最強）。
+  const TAU=6.28318530718;
+  const SHAPES={
+    sphere(a){for(let i=0;i<N;i++){const yy=1-2*((i+0.5)/N),rr=Math.sqrt(Math.max(0,1-yy*yy)),phi=i*2.399963267,R=2.55+(hh(i*0.7+9.2)-0.5)*0.7;a[i*3]=rr*Math.cos(phi)*R;a[i*3+1]=yy*R;a[i*3+2]=rr*Math.sin(phi)*R;}},
+    dna(a){const TW=2.5,H=9.0,off=2.3,R=1.62;for(let i=0;i<N;i++){const r1=hh(i+0.13),r2=hh(i*1.7+2.3),r4=hh(i*0.7+9.2),r5=hh(i*3.3+1.1),jx=r4-0.5,jz=hh(i*5.1+0.9)-0.5;let x,y,zz;
+      if(r2<0.18){const f=r4,ang=f*TW*TAU,u=r5,ax=Math.cos(ang)*R,az=Math.sin(ang)*R,bx=Math.cos(ang+off)*R,bz=Math.sin(ang+off)*R;x=ax+(bx-ax)*u+jx*0.10;y=(f-0.5)*H;zz=az+(bz-az)*u+jz*0.10;}
+      else{const which=i&1,t=r1,th=t*TW*TAU+which*off,RR=R+jx*0.16;x=Math.cos(th)*RR;y=(t-0.5)*H+(r5-0.5)*0.10;zz=Math.sin(th)*RR;}
+      a[i*3]=x*_CZ-y*_SZ;a[i*3+1]=x*_SZ+y*_CZ;a[i*3+2]=zz;}},
+    grid(a){for(let i=0;i<N;i++){let x=(hh(i+0.13)-0.5)*7.0,y=(hh(i*1.7+2.3)-0.5)*6.4;const z2=Math.sin(x*1.3+y*1.05)*0.72,g=Math.hypot(x,y)*0.17,c=Math.cos(g),s2=Math.sin(g);a[i*3]=x*c-y*s2;a[i*3+1]=x*s2+y*c;a[i*3+2]=z2+(hh(i*5.1+0.9)-0.5)*0.8;}},
+    helix(a){const TW=3.0,H=6.4,off=Math.PI;for(let i=0;i<N;i++){const R=1.5+(hh(i*0.7+9.2)-0.5)*0.12,which=i&1,t=hh(i+0.13),th=t*TW*TAU+which*off;a[i*3]=Math.cos(th)*R;a[i*3+1]=(t-0.5)*H+(hh(i*3.3+1.1)-0.5)*0.10;a[i*3+2]=Math.sin(th)*R;}},
+    hourglass(a){for(let i=0;i<N;i++){const yy=(hh(i+0.13)-0.5)*5.6,rr=0.06+Math.abs(yy)*0.74,g=hh(i*1.7+2.3)*TAU;a[i*3]=Math.cos(g)*rr+(hh(i*0.7+9.2)-0.5)*0.1;a[i*3+1]=yy;a[i*3+2]=Math.sin(g)*rr+(hh(i*5.1+0.9)-0.5)*0.1;}},
+    torus(a){const R=1.95,r=0.62,tl=0.5;for(let i=0;i<N;i++){const u=hh(i+0.13)*TAU,v=hh(i*1.7+2.3)*TAU,rr=r*(0.4+0.6*Math.sqrt(hh(i*2.9+5.1)));const x=(R+rr*Math.cos(v))*Math.cos(u),yy=rr*Math.sin(v),z=(R+rr*Math.cos(v))*Math.sin(u);a[i*3]=x;a[i*3+1]=yy*Math.cos(tl)-z*Math.sin(tl)*0.45;a[i*3+2]=yy*Math.sin(tl)+z*Math.cos(tl);}},
+    heart(a){for(let i=0;i<N;i++){let x=0,y=0,ok=false;for(let k=0;k<14;k++){x=(hh(i*3.1+k*7.7+0.4)-0.5)*2.9;y=(hh(i*5.3+k*3.3+1.9)-0.5)*2.9;const f=Math.pow(x*x+y*y-1,3)-x*x*y*y*y;if(f<0){ok=true;break;}}
+      if(!ok){x=0;y=0.5;}a[i*3]=x*1.85;a[i*3+1]=y*1.85+0.1;a[i*3+2]=(hh(i*7.7+3.2)-0.5)*(0.5-0.3*Math.min(1,x*x+y*y));}},
+    leaf(a){const ct=Math.cos(0.6),st=Math.sin(0.6);for(let i=0;i<N;i++){const u=hh(i+0.13),w=Math.pow(Math.sin(Math.PI*u),0.85);let x=(u-0.5)*4.4,y=(hh(i*1.7+2.3)-0.5)*w*1.6;if(hh(i*2.9+5.1)<0.10)y*=0.05;/* 主脈 */
+      const z=Math.sin(u*Math.PI)*0.001+(hh(i*5.1+0.9)-0.5)*0.16+y*y*0.25;/* 葉の反り */
+      a[i*3]=x*ct-y*st;a[i*3+1]=x*st+y*ct;a[i*3+2]=z;}},
+    flower(a){const K=5;for(let i=0;i<N;i++){if(hh(i*2.9+5.1)<0.14){const g=hh(i+0.13)*TAU,r=Math.sqrt(hh(i*1.7+2.3))*0.55;a[i*3]=Math.cos(g)*r;a[i*3+1]=Math.sin(g)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.2+0.08;continue;}
+      const p=Math.floor(hh(i*4.3+0.7)*K),ph=(hh(i*1.7+2.3)-0.5)*(TAU/K)*0.92,th=p*TAU/K+ph+TAU/4;
+      const env=Math.cos(ph*K/2),r=2.5*Math.pow(hh(i*3.3+1.1),0.5)*Math.max(0.1,env);
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=Math.sin(th)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.2-r*0.06;}},
+    wave(a){const ct=Math.cos(-0.55),st=Math.sin(-0.55);for(let i=0;i<N;i++){const x=(hh(i+0.13)-0.5)*7.4,z=(hh(i*1.7+2.3)-0.5)*4.6;let y=Math.sin(x*1.15+z*0.7)*0.55+Math.sin(x*2.3-z*1.1)*0.22-0.2;y+=(hh(i*5.1+0.9)-0.5)*0.1;
+      a[i*3]=x;a[i*3+1]=y*ct-z*st;a[i*3+2]=y*st+z*ct;}},
+    galaxy(a){for(let i=0;i<N;i++){if(hh(i*4.3+0.7)<0.12){const u=hh(i+0.13)*2-1,g=hh(i*1.7+2.3)*TAU,rr=Math.sqrt(Math.max(0,1-u*u))*0.6;a[i*3]=rr*Math.cos(g);a[i*3+1]=u*0.55;a[i*3+2]=rr*Math.sin(g);continue;}
+      const arm=i&1,t=Math.pow(hh(i+0.13),0.72),th=t*3.4*Math.PI+arm*Math.PI+(hh(i*1.7+2.3)-0.5)*(0.9-t*0.5);const r=0.3+t*2.6;
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=(hh(i*3.3+1.1)-0.5)*0.34*(1-t*0.6);a[i*3+2]=Math.sin(th)*r*0.9;}},
+    mountain(a){for(let i=0;i<N;i++){const h=Math.pow(hh(i+0.13),0.78),g=hh(i*1.7+2.3)*TAU;const r=(1-h)*2.8*(0.72+0.32*hh(i*3.3+1.1)+0.16*Math.sin(g*5+h*9));a[i*3]=Math.cos(g)*r;a[i*3+1]=h*3.6-1.4;a[i*3+2]=Math.sin(g)*r*0.72;}},
+    crystal(a){for(let i=0;i<N;i++){let u=hh(i+0.13),v=hh(i*1.7+2.3);if(u+v>1){u=1-u;v=1-v;}const w=1-u-v;
+      const sx=hh(i*2.9+5.1)<0.5?-1:1,sy=hh(i*3.3+1.1)<0.5?-1:1,sz=hh(i*5.1+0.9)<0.5?-1:1,pf=1+(hh(i*7.7+3.2)-0.5)*0.06;
+      a[i*3]=sx*u*1.7*pf;a[i*3+1]=sy*v*2.5*pf;a[i*3+2]=sz*w*1.7*pf;}},
+    tornado(a){for(let i=0;i<N;i++){const t=hh(i+0.13),th=t*5*TAU+(hh(i*1.7+2.3)-0.5)*0.8;const r=(0.22+Math.pow(t,1.35)*2.0)*(0.82+0.36*hh(i*3.3+1.1));
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=(t-0.5)*5.4;a[i*3+2]=Math.sin(th)*r;}},
+    moon(a){for(let i=0;i<N;i++){let x=0,y=0,z=0;for(let k=0;k<10;k++){const u=hh(i*3.1+k*7.7+0.4)*2-1,g=hh(i*5.3+k*3.3+1.9)*TAU,rr=Math.sqrt(Math.max(0,1-u*u));x=rr*Math.cos(g)*2.3;y=u*2.3;z=rr*Math.sin(g)*2.3;
+      const ex=x-1.05,ez=z-0.4;if(ex*ex+y*y+ez*ez>1.95*1.95)break;}a[i*3]=x;a[i*3+1]=y;a[i*3+2]=z;}},
+    star(a){for(let i=0;i<N;i++){const th=hh(i+0.13)*TAU;const f=((th/TAU*5+0.25)%1),w=Math.abs(f*2-1);const rmax=1.05+(2.6-1.05)*Math.pow(1-w,1.6);const r=Math.sqrt(hh(i*1.7+2.3))*rmax;
+      a[i*3]=Math.cos(th-Math.PI/2)*r;a[i*3+1]=-Math.sin(th-Math.PI/2)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.3;}},
+    cup(a){for(let i=0;i<N;i++){const s=hh(i*4.3+0.7);
+      if(s<0.62){const g=hh(i+0.13)*TAU,r=1.25*(1+(hh(i*2.9+5.1)-0.5)*0.05);a[i*3]=Math.cos(g)*r;a[i*3+1]=(hh(i*1.7+2.3)-0.5)*2.1-0.1;a[i*3+2]=Math.sin(g)*r;}
+      else if(s<0.72){const g=hh(i+0.13)*TAU;a[i*3]=Math.cos(g)*1.27;a[i*3+1]=0.95+(hh(i*1.7+2.3)-0.5)*0.06;a[i*3+2]=Math.sin(g)*1.27;}
+      else if(s<0.88){const ph=(hh(i+0.13)-0.5)*2.4,r=0.62,tb=0.11;const cx=1.25+0.15;a[i*3]=cx+Math.cos(ph)*r*0.8+(hh(i*2.9+5.1)-0.5)*tb;a[i*3+1]=Math.sin(ph)*r+0.05;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*tb*2;}
+      else{const g=hh(i+0.13)*TAU,r=1.35+Math.sqrt(hh(i*1.7+2.3))*0.85;a[i*3]=Math.cos(g)*r;a[i*3+1]=-1.2+(hh(i*2.9+5.1)-0.5)*0.05;a[i*3+2]=Math.sin(g)*r;}}},
+  };
+  // 絵文字/単語 → canvasに描いてシルエットを粒子化
+  function sampleGlyph(txt,isEmoji){try{const S=512,cv=document.createElement('canvas');cv.width=cv.height=S;const g=cv.getContext('2d',{willReadFrequently:true});
+    g.textAlign='center';g.textBaseline='middle';let fs=isEmoji?400:250;
+    const fam=isEmoji?'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif':((CONFIG.fonts&&CONFIG.fonts.display)||"'Anton',sans-serif");
+    g.font=(isEmoji?'':'900 ')+fs+'px '+fam;let w=g.measureText(txt).width;if(w>S*0.92){fs=fs*S*0.92/w;g.font=(isEmoji?'':'900 ')+fs+'px '+fam;}
+    g.fillStyle='#fff';g.fillText(txt,S/2,S/2+(isEmoji?8:0));
+    const d=g.getImageData(0,0,S,S).data,A=(x,y)=>(x<0||y<0||x>=S||y>=S)?0:d[(y*S+x)*4+3];
+    // 輪郭(edge)と内部(inner)を分ける：輪郭に粒を集めるとネオンサイン風にくっきり読める＆全部内部に置くと白飛びする
+    const edge=[],inner=[];
+    for(let y=0;y<S;y+=2)for(let x=0;x<S;x+=2){if(A(x,y)>110){(A(x-4,y)<=110||A(x+4,y)<=110||A(x,y-4)<=110||A(x,y+4)<=110)?edge.push(x,y):inner.push(x,y);}}
+    return (edge.length+inner.length)>160?{edge,inner,S}:null;}catch(e){return null;}}
+  function buildGlyph(a,txt,isEmoji){const smp=sampleGlyph(txt,isEmoji);if(!smp){SHAPES.sphere(a);return false;}
+    const{edge,inner,S}=smp,ME=edge.length/2,MI=inner.length/2,sc=5.4/S;
+    for(let i=0;i<N;i++){const useE=(hh(i*4.7+0.9)<0.45&&ME>30)||MI<30;
+      const L=useE?edge:inner,M=useE?ME:MI,jit=useE?1.2:3.2,zs=useE?0.22:0.85;
+      const k=Math.floor(hh(i*1.31+2.7)*M)*2;const px=L[k]+(hh(i*2.17+1.1)-0.5)*jit*2,py=L[k+1]+(hh(i*3.71+0.4)-0.5)*jit*2;
+      a[i*3]=(px-S/2)*sc;a[i*3+1]=(S/2-py)*sc;a[i*3+2]=(hh(i*5.13+7.7)-0.5)*zs;}return true;}
+  const _glyphLate=[];// Webフォント読込後に text: シルエットを再生成（初回はフォールバック字形になるため）
+  function buildShape(arr,spec,slot){spec=String(spec||'sphere');
+    if(spec.startsWith('emoji:'))buildGlyph(arr,spec.slice(6).trim(),true);
+    else if(spec.startsWith('text:')){buildGlyph(arr,spec.slice(5).trim(),false);_glyphLate.push([arr,spec.slice(5).trim(),slot]);}
+    else (SHAPES[spec]||SHAPES.sphere)(arr);}
+  buildShape(a1,(CONFIG.chapters[0]||{}).shape||'sphere',1);
+  buildShape(a2,(CONFIG.chapters[1]||{}).shape||'dna',2);
+  buildShape(a3,(CONFIG.chapters[2]||{}).shape||'grid',3);
+  buildShape(a4,(CONFIG.chapters[3]||{}).shape||'helix',4);
+  buildShape(a5,(CONFIG.join||{}).shape||'hourglass',5);
   const pgeo=new THREE.BufferGeometry();
   pgeo.setAttribute('position',new THREE.BufferAttribute(a0,3));
   pgeo.setAttribute('a0',new THREE.BufferAttribute(a0,3));pgeo.setAttribute('a1',new THREE.BufferAttribute(a1,3));pgeo.setAttribute('a2',new THREE.BufferAttribute(a2,3));pgeo.setAttribute('a3',new THREE.BufferAttribute(a3,3));pgeo.setAttribute('a4',new THREE.BufferAttribute(a4,3));pgeo.setAttribute('a5',new THREE.BufferAttribute(a5,3));pgeo.setAttribute('aRand',new THREE.BufferAttribute(aRand,3));pgeo.setAttribute('aSeed',new THREE.BufferAttribute(aSeed,1));
   pgeo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),120);
+  if(_glyphLate.length&&document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{_glyphLate.forEach(([arr,txt,slot])=>{buildGlyph(arr,txt,false);const at=pgeo.attributes['a'+slot];if(at)at.needsUpdate=true;});});
   const pU={uIdx:{value:0},uTime:{value:0},uScatter:{value:1.5},uSize:{value:lowPerf?34:42},uPix:{value:Math.min(devicePixelRatio||1,2)},uColor:{value:new THREE.Color(0x9fc4ff)},uOpacity:{value:0},uHeroScale:{value:1}};
   const pMat=new THREE.ShaderMaterial({uniforms:pU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     vertexShader:`uniform float uIdx,uTime,uScatter,uSize,uPix,uHeroScale;attribute vec3 a0,a1,a2,a3,a4,a5,aRand;attribute float aSeed;varying float vG;
@@ -408,13 +500,19 @@
   let fvGlow=null;
   {const sz=256,cv=document.createElement('canvas');cv.width=cv.height=sz;const gx=cv.getContext('2d');const rg=gx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz/2);rg.addColorStop(0,'rgba(255,255,255,0.95)');rg.addColorStop(0.22,'rgba(190,215,255,0.45)');rg.addColorStop(0.55,'rgba(120,150,235,0.14)');rg.addColorStop(1,'rgba(0,0,0,0)');gx.fillStyle=rg;gx.fillRect(0,0,sz,sz);
    const gt=new THREE.CanvasTexture(cv);fvGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:gt,color:0x8fc0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));fvGlow.scale.set(13,7.5,1);fvGlow.position.z=-1.2;fvGroup.add(fvGlow);}
-  new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/fonts/helvetiker_bold.typeface.json',(font)=>{
+  // FVの3Dフォント（CONFIG.fonts.hero3d）：helvetiker=ゴシック / optimer / gentilis=セリフ(上品) / droid-sans / droid-serif
+  const F3D={'helvetiker':'helvetiker_bold.typeface.json','optimer':'optimer_bold.typeface.json','gentilis':'gentilis_bold.typeface.json','droid-sans':'droid/droid_sans_bold.typeface.json','droid-serif':'droid/droid_serif_bold.typeface.json'};
+  const _f3d=F3D[(CONFIG.fonts&&CONFIG.fonts.hero3d)||'helvetiker']||F3D.helvetiker;
+  // エッジ発光・ハローの色はテーマ（tints[HERO]のアクセント）から自動生成 → どのテーマでも世界観が揃う
+  const _heroAcc=new THREE.Color(CONFIG.tints[0][1]).lerp(new THREE.Color(0xffffff),0.5);
+  if(fvGlow)fvGlow.material.color.copy(_heroAcc);
+  new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/fonts/'+_f3d,(font)=>{
     const tg=new TextGeometry(CONFIG.brand,{font,size:1.5,height:0.42,curveSegments:8,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.034,bevelSegments:3});
     tg.computeBoundingBox();const bb=tg.boundingBox;fvW=bb.max.x-bb.min.x;tg.translate(-(bb.max.x+bb.min.x)/2,-(bb.max.y+bb.min.y)/2,-(bb.max.z+bb.min.z)/2);
     let body=tg;try{body=new TessellateModifier(0.14,6).modify(tg.clone().toNonIndexed());}catch(e){}
     fvBodyMat=fvAddDisp(new THREE.MeshStandardMaterial({color:0xdde3ec,metalness:0.95,roughness:0.34,envMapIntensity:1.2,transparent:true,opacity:1}));
     fvSpin.add(new THREE.Mesh(body,fvBodyMat));
-    fvEdgeMat=fvAddDisp(new THREE.LineBasicMaterial({color:0xaef2ff,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}));
+    fvEdgeMat=fvAddDisp(new THREE.LineBasicMaterial({color:_heroAcc.getHex(),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}));
     fvSpin.add(new THREE.LineSegments(new THREE.EdgesGeometry(tg,20),fvEdgeMat));
     // 粒子のHERO形(a0)を金属メッシュ表面からサンプリング → 金属が砕けて"そのまま粒子になる"自然な受け渡し
     try{const sp=body.attributes.position,triN=Math.floor(sp.count/3);
@@ -521,7 +619,7 @@
     const _bg=CONFIG.background;nU.uField.value=(_bg==='field')?1.0:0.0;nU.uHero.value=(_bg==='field'||_bg==='nebula')?0.0:(_bg==='grid-hero')?(1.0-ss(0.1,0.7,pU.uIdx.value)):1.0;// 背景モード＝CONFIG.background
     pU.uColor.value.copy(tint.b).lerp(_W,0.22);
     const _pot=(pU.uIdx.value<1)?ss(0.08,0.45,pU.uIdx.value)*0.55:psT[0];partOp=lerp(partOp,_pot,.08);pU.uOpacity.value=partOp;
-    if(!reduce){if(activeStage==='hero'){particleGroup.rotation.y=lerp(particleGroup.rotation.y,fvSpin.rotation.y,0.1);particleGroup.rotation.x=lerp(particleGroup.rotation.x,fvSpin.rotation.x,0.1);}else{particleGroup.rotation.y+=dt*0.16;particleGroup.rotation.x=lerp(particleGroup.rotation.x,Math.sin(t*0.16)*0.11,0.05);}}
+    if(!reduce){if(activeStage==='hero'){particleGroup.rotation.y=lerp(particleGroup.rotation.y,fvSpin.rotation.y,0.1);particleGroup.rotation.x=lerp(particleGroup.rotation.x,fvSpin.rotation.x,0.1);}else{/* 連続回転だと絵文字等の平面シルエットが真横=線になる瞬間ができる → ±22°のゆらぎ往復に */particleGroup.rotation.y=lerp(particleGroup.rotation.y,Math.sin(t*0.14)*0.38,0.03);particleGroup.rotation.x=lerp(particleGroup.rotation.x,Math.sin(t*0.16)*0.11,0.05);}}
     // FV金属文字：HEROで表示。スクロール(uIdx 0→1)で「序盤キープ→細かく砕けて散る」+フェードアウト
     {const fp=Math.max(0,Math.min(1,pU.uIdx.value));fvGroup.visible=(fp<0.7);
      if(fvBodyMat){const dd=ss(0.18,0.72,fp);fvBodyMat.userData.uD.value=dd;fvEdgeMat.userData.uD.value=dd;
@@ -546,6 +644,7 @@
   }
   function degrade(){if(!useBloom)return;useBloom=false;curDPR=Math.min(curDPR,1.0);renderer.setPixelRatio(curDPR);const g=document.querySelector('.grain');if(g)g.remove();window.__err&&window.__err('軽量モードに自動切替(低FPS検知)');}
   gsap.ticker.add((time)=>{if(!paused)render(time*1000);});
+  window.__pump=(n)=>{for(let i=0;i<(n||1);i++)render(performance.now());};// 検証用：非表示タブでも手動でフレームを進める（通常は未使用・無害）
 
   // ---------- preloader → unlock → refresh ----------
   const pm=document.getElementById('pm'),pbar=document.getElementById('pbar');const len=pm.getTotalLength();pm.style.strokeDasharray=len;pm.style.strokeDashoffset=len;
