@@ -53,7 +53,7 @@
 | `join.body` | 最終画面の本文 | |
 | `join.ctaText` / `join.ctaUrl` | ボタンの文言 / 飛び先URL | URLが無ければ `'#'`（後で差し替え可）と伝える |
 | `footer` | フッター文 | HTMLタグ可 |
-| `background` | 背景モード | `'grid-all'` / `'grid-hero'` / `'nebula'` |
+| `background` | 背景モード | `'grid-all'` / `'grid-hero'` / `'nebula'` / `'field'`(自然・畑) |
 | `tints` | 各章の色 `[背景, アクセント]` を6組（16進 `0x......`） | 順に HERO/CONNECTION/ALGORITHM/IGNITION/VOICE/JOIN。相手の"色"の答えから決める |
 
 ## コピーの質（あなたが書くときの基準）
