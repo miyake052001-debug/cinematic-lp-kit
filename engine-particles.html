@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ja">
+<!-- ═══════════════════════════════════════════════════════════════
+  Sukeads LP テンプレート ／ 使い方（非エンジニアOK・このファイル1枚で完結）
+  ── 複製して下記を書き換えれば別ブランドのLPになる。3D演出は共通のまま。
+  1) 編集：下の <script type="module"> 内「▼▼▼ CONFIG ▼▼▼」ブロックだけ書き換える
+       ・brand … FVの立体文字／ヘッダー／フッター／タブ名
+       ・hero.sub, chapters[].body … 各画面の文章（改行は <br>）
+       ・chapters[].title/idx/label/accent … 各章の見出し・小見出し色
+       ・join.heading/font/body/ctaText/ctaUrl … 最終画面とCTAボタン
+       ・background … 'grid-all'(全章グリッド) / 'grid-hero'(FVだけ) / 'nebula'(星雲) / 'field'(自然・畑)
+       ・tints … 各章の色 [背景, アクセント] を6組（16進 0x......）
+       ※ CONFIG より下（3Dエンジン）は触らない。
+  2) 確認：このフォルダで  python3 -m http.server 8803  → http://localhost:8803/ （更新は ⌘+Shift+R）
+  3) 公開：index.html だけ入れたフォルダで
+           npx wrangler login  →  npx wrangler pages deploy . --project-name <好きな名前>
+           （または dash.cloudflare.com → Workers&Pages → Pages にフォルダをドラッグ&ドロップ）
+  ・フォントを変える時は join.font と、<head> の Google Fonts <link> の両方に足す。
+  ═══════════════════════════════════════════════════════════════ -->
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sukeads — Woven Worlds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@1,9..144,300..600&family=Syncopate:wght@700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#040406;--ink:#f4f1ea;--dim:#9a958b;--muted:#56544f;--line:rgba(244,241,234,.12);
+    --amber:#ff7a18;--gold:#ffc46b;--cyan:#6fe9ff;--violet:#8a6cff;--green:#3df0c0;--line-green:#06c755;
+    --disp:'Anton',sans-serif;--serif:'Fraunces',Georgia,serif;--sans:'Zen Kaku Gothic New',sans-serif;--mono:'Space Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);overflow-x:hidden;cursor:none}
+  body.lock{overflow:hidden;height:100vh}
+  @media(hover:none){body{cursor:auto}}
+  ::selection{background:var(--amber);color:#000}
+  canvas#gl{position:fixed;inset:0;z-index:0;display:block}
+  .grain{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .vig{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,transparent 45%,rgba(0,0,0,.74) 100%)}
+  .jveil{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .6s;background:linear-gradient(180deg,transparent 24%,rgba(4,4,6,.62) 47%,rgba(4,4,6,.9) 78%)}
+  .jveil.on{opacity:1}
+  .cursor{position:fixed;top:0;left:0;width:30px;height:30px;border:1px solid rgba(244,241,234,.6);border-radius:50%;transform:translate(-50%,-50%);z-index:300;pointer-events:none;transition:width .25s,height .25s,background .25s,border-color .25s}
+  .cursor.big{width:74px;height:74px;background:rgba(255,122,24,.14);border-color:transparent}
+  .dot{position:fixed;top:0;left:0;width:4px;height:4px;background:var(--amber);border-radius:50%;transform:translate(-50%,-50%);z-index:301;pointer-events:none}
+  @media(hover:none){.cursor,.dot{display:none}}
+  .prog{position:fixed;top:0;left:0;height:2px;width:100%;z-index:160}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--gold),var(--cyan));box-shadow:0 0 12px var(--amber)}
+  #pre{position:fixed;inset:0;z-index:400;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;transition:opacity 1s,visibility 1s}
+  #pre.done{opacity:0;visibility:hidden}
+  #pre .mark{width:80px;height:80px}#pre .mark path{fill:none;stroke:var(--gold);stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 10px rgba(255,196,107,.6))}
+  #pre .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.5em;color:var(--dim);text-indent:.5em}
+  #pre .bar{width:min(260px,56vw);height:1px;background:rgba(244,241,234,.14);overflow:hidden}#pre .bar b{display:block;height:100%;width:0;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+  header{position:fixed;top:0;left:0;width:100%;z-index:120;display:flex;justify-content:space-between;align-items:center;padding:22px clamp(18px,4vw,56px)}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-size:19px;letter-spacing:.1em;text-shadow:0 1px 12px rgba(0,0,0,.7)}
+  .brand svg{width:24px;height:24px}.brand svg path{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+  nav.menu{display:flex;gap:24px;font-family:var(--mono);font-size:11px;letter-spacing:.26em;align-items:center;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+  nav.menu a{color:var(--ink);text-decoration:none;opacity:.82;transition:opacity .3s}nav.menu a:hover{opacity:1}
+  nav.menu .clock{color:var(--dim)}@media(max-width:680px){nav.menu .hsm{display:none}}
+  #hud{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:320;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--gold);background:rgba(4,4,6,.82);border:1px solid var(--line);padding:5px 14px;border-radius:40px}
+  #switch{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:330;display:flex;gap:6px;align-items:center;background:rgba(4,4,6,.8);border:1px solid var(--line);padding:6px 8px;border-radius:40px;font-family:var(--mono)}
+  #switch button{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 9px;border-radius:30px;cursor:pointer;transition:color .25s,border-color .25s,background .25s}
+  #switch button:hover{color:var(--ink)}
+  #switch button.on{color:#04140b;background:var(--gold);border-color:var(--gold)}
+  #switch .nav{color:var(--cyan);padding:6px 8px}
+  @media(max-width:760px){#switch .lbl{display:none}#switch button{padding:6px 7px;font-size:9px}}
+  .fx{position:fixed;font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--muted);z-index:110;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+  .fx.tl{top:114px;left:clamp(18px,5vw,56px)}.fx.br{bottom:64px;left:clamp(18px,5vw,56px)}
+  .cue{position:fixed;bottom:64px;right:clamp(18px,5vw,56px);z-index:110;font-family:var(--mono);font-size:10px;letter-spacing:.34em;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:9px;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+  .cue .ln{width:1px;height:38px;background:linear-gradient(var(--amber),transparent);position:relative;overflow:hidden}
+  .cue .ln::after{content:'';position:absolute;top:-50%;left:0;width:100%;height:50%;background:var(--ink);animation:drop 1.8s ease-in-out infinite}
+  @keyframes drop{0%{top:-50%}100%{top:110%}}
+  main{position:relative;z-index:10}
+  /* 各章=2スクロール分(200vh)：前半1画面=形が完成した静止ゾーン(テキストもここ)、後半1画面=次の形へモーフ。padding-bottom:100vhで本文を前半画面に寄せる */
+  section{position:relative;min-height:200vh;display:flex;flex-direction:column;justify-content:center;padding:clamp(80px,12vh,150px) clamp(20px,7vw,120px) 100vh}
+  .reveal{opacity:0;transform:translateY(34px);filter:blur(6px);transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1s cubic-bezier(.16,1,.3,1),filter 1s}
+  .reveal.in{opacity:1;transform:none;filter:none}
+  .reveal[data-d="1"]{transition-delay:.1s}.reveal[data-d="2"]{transition-delay:.24s}.reveal[data-d="3"]{transition-delay:.38s}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;display:flex;align-items:center;gap:14px;margin-bottom:24px;color:var(--gold)}
+  .eyebrow::before{content:'';width:30px;height:1px;background:currentColor}
+  .hero{align-items:center;text-align:center;justify-content:flex-end;padding-bottom:calc(100vh + clamp(40px,6vh,90px))}
+  .hero h1{font-family:var(--disp);font-size:clamp(70px,20vw,290px);line-height:.84;letter-spacing:.015em;
+    background:linear-gradient(108deg,#fff 8%,var(--cyan) 38%,#86b0ff 72%,#fff 100%);background-size:220% auto;
+    -webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 9s linear infinite;
+    filter:drop-shadow(0 6px 30px rgba(0,0,0,.55)) drop-shadow(0 0 60px rgba(74,140,255,.32))}
+  @keyframes shine{to{background-position:220% center}}
+  .hero .sub{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(17px,2.4vw,30px);margin-top:22px;text-shadow:0 2px 20px rgba(0,0,0,.8)}
+  .chapter{max-width:640px}.chapter.right{margin-left:auto;text-align:right}.chapter.right .eyebrow{justify-content:flex-end}
+  .chapter .idx{font-family:var(--disp);font-size:clamp(42px,8vw,104px);line-height:1;color:rgba(244,241,234,.05);-webkit-text-stroke:1.4px rgba(244,241,234,.5)}
+  .chapter h2{font-family:var(--disp);font-size:clamp(40px,7vw,98px);line-height:.92;margin:6px 0 18px;letter-spacing:.01em;background:linear-gradient(180deg,#fff,#8f8b81);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .chapter p{font-family:var(--serif);font-weight:300;font-size:clamp(16px,1.8vw,22px);line-height:1.6;color:var(--ink);max-width:42ch;text-shadow:0 2px 30px rgba(0,0,0,.85)}
+  .chapter.right p{margin-left:auto}
+  /* PCでも発光背景でテキストが少し沈むので、テキスト側に寄せた楕円スクリムを敷く（反対側の3D/幻想感は保つ）。モバイルは下のmedia queryで縦帯に上書き */
+  .chapter::before{content:'';position:absolute;top:0;left:0;right:0;height:100vh;z-index:-1;pointer-events:none;
+    background:radial-gradient(ellipse 66% 64% at 26% 50%,rgba(4,4,6,.74) 0%,rgba(4,4,6,.46) 46%,rgba(4,4,6,.16) 66%,transparent 82%)}
+  .chapter.right::before{background:radial-gradient(ellipse 66% 64% at 74% 50%,rgba(4,4,6,.74) 0%,rgba(4,4,6,.46) 46%,rgba(4,4,6,.16) 66%,transparent 82%)}
+  .chapter h2{filter:drop-shadow(0 2px 14px rgba(0,0,0,.78))}
+  .chapter p{text-shadow:0 1px 2px rgba(0,0,0,.78),0 2px 30px rgba(0,0,0,.88)}
+  .chapter .eyebrow{text-shadow:0 1px 10px rgba(0,0,0,.85)}
+  .join{align-items:center;text-align:center;justify-content:flex-end;padding-bottom:calc(100vh + clamp(60px,10vh,120px))}
+  .join h2{font-family:'Syncopate',sans-serif;font-weight:700;font-size:clamp(26px,7.4vw,112px);line-height:1.14;letter-spacing:.11em;background:linear-gradient(120deg,#fff,#6fe9cf 46%,#2fd6a0 76%,#8ff0ff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 34px rgba(61,240,192,.28));text-indent:.11em}
+  .join p{font-family:var(--serif);font-style:italic;font-size:clamp(16px,2.1vw,24px);color:var(--ink);margin-top:14px;max-width:24ch;text-shadow:0 2px 26px rgba(0,0,0,.92)}
+  .line-cta{margin-top:28px;display:inline-flex;align-items:center;gap:13px;background:var(--cta,var(--line-green));color:var(--cta-ink,#03361b);font-family:var(--sans);font-weight:700;font-size:16px;padding:19px 36px;border-radius:60px;text-decoration:none;box-shadow:0 18px 56px var(--cta-sh,rgba(6,199,85,.3));transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s;position:relative}
+  .line-cta:hover{box-shadow:0 26px 70px var(--cta-sh2,rgba(6,199,85,.5))}
+  .line-cta small{display:block;font-weight:400;font-size:11px;opacity:.72}
+  .line-cta .pulse{width:9px;height:9px;border-radius:50%;background:var(--cta-ink,#03361b);box-shadow:0 0 0 0 var(--cta-pl,rgba(3,54,27,.5));animation:pl 2s infinite}
+  @keyframes pl{0%{box-shadow:0 0 0 0 var(--cta-pl,rgba(3,54,27,.5))}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  footer{position:relative;z-index:10;border-top:1px solid var(--line);padding:clamp(44px,8vh,90px) clamp(20px,6vw,90px) 90px;background:linear-gradient(180deg,transparent,rgba(4,4,6,.92))}
+  .fg{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .fg .big{font-family:var(--disp);font-size:clamp(36px,7vw,76px);color:var(--ink);line-height:.9;letter-spacing:.03em}
+  .fg .made{font-family:var(--serif);font-style:italic;font-size:clamp(16px,2.4vw,24px);color:var(--ink);align-self:flex-end}.fg .made b{font-style:normal;font-weight:600;color:var(--gold)}
+  #err{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:500;display:none;background:rgba(20,8,8,.92);border:1px solid rgba(255,80,60,.4);color:#ffb4a8;font-family:var(--mono);font-size:11px;padding:9px 15px;border-radius:8px;max-width:90vw}
+  /* ===== モバイル：発光3Dの真上で章テキストが読みにくい → 文字の帯にだけ可読スクリムを敷き、文字自体も強める（PCには影響なし） ===== */
+  @media(max-width:680px){
+    .chapter::before{content:'';position:absolute;top:0;left:0;right:0;height:100vh;z-index:-1;pointer-events:none;
+      background:linear-gradient(180deg,transparent 0%,rgba(4,4,6,.5) 14%,rgba(4,4,6,.84) 32%,rgba(4,4,6,.84) 70%,rgba(4,4,6,.5) 88%,transparent 100%)}
+    .chapter h2{filter:drop-shadow(0 2px 12px rgba(0,0,0,.92));background:linear-gradient(180deg,#fff,#d9d5cc);-webkit-background-clip:text;background-clip:text}
+    .chapter p{font-weight:400;color:#fbf9f4;text-shadow:0 1px 3px rgba(0,0,0,.95),0 2px 20px rgba(0,0,0,.9)}
+    .chapter .eyebrow{text-shadow:0 1px 8px rgba(0,0,0,.9)}
+    .hero .sub,.join p{text-shadow:0 1px 3px rgba(0,0,0,.95),0 2px 22px rgba(0,0,0,.92)}
+  }
+</style>
+</head>
+<body class="lock">
+  <canvas id="gl"></canvas>
+  <div class="grain"></div><div class="vig"></div>
+  <div class="prog"><i id="prog"></i></div>
+  <div class="cursor" id="cur"></div><div class="dot" id="curd"></div>
+  <div id="err"></div><div id="hud">Sukeads · — FPS</div>
+
+  <div id="pre">
+    <svg class="mark" viewBox="0 0 100 100"><path id="pm" d="M30,30 C30,12 70,12 70,30 C70,48 30,52 30,70 C30,88 70,88 70,70 C70,52 30,48 30,30 Z"/></svg>
+    <div class="bar"><b id="pbar"></b></div><div class="lbl">WEAVING WORLDS</div>
+  </div>
+
+  <header>
+    <div class="brand"><svg viewBox="0 0 100 100"><path d="M30,30 C30,12 70,12 70,30 C70,48 30,52 30,70 C30,88 70,88 70,70 C70,52 30,48 30,30 Z"/></svg>Sukeads</div>
+    <nav class="menu"><a href="#connection" class="hsm">INDEX</a><a href="#ignition" class="hsm">SIGNAL</a><a href="#join">JOIN</a><span class="clock" id="clock">--:--:--</span></nav>
+  </header>
+  <div class="fx tl">才能じゃない。設計だ。</div>
+  <div class="fx br">N 35.6762° / E 139.6503°</div>
+  <div class="cue" id="cue"><span>SCROLL</span><span class="ln"></span></div>
+
+  <div id="switch"><span class="nav" id="prev">◀</span><span class="lbl" style="color:var(--muted);font-size:9px;letter-spacing:.2em;padding:0 4px">WORLD</span><span class="nav" id="next">▶</span></div>
+
+  <div class="jveil" id="jveil"></div>
+
+  <main>
+    <section class="hero" data-stage="hero"><h1>Sukeads</h1><p class="sub">凡人だからこそできる最強の戦術を。</p></section>
+    <section class="chapter" id="connection" data-stage="connection">
+      <div class="eyebrow reveal" style="color:var(--cyan)">Chapter 01 — Connection</div>
+      <div class="idx reveal" data-d="1">01</div><h2 class="reveal" data-d="1">CONNECTION</h2>
+      <p class="reveal" data-d="2">足りないのは新しいノウハウじゃない。<br>ノウハウコレクターから卒業しろ。</p>
+    </section>
+    <section class="chapter right" id="algorithm" data-stage="algorithm">
+      <div class="eyebrow reveal" style="color:var(--violet)">Chapter 02 — Algorithm</div>
+      <div class="idx reveal" data-d="1">02</div><h2 class="reveal" data-d="1">ALGORITHM</h2>
+      <p class="reveal" data-d="2">Threadsをハックしろ。<br>プラットフォームに踊らされるな。</p>
+    </section>
+    <section class="chapter" id="ignition" data-stage="ignition">
+      <div class="eyebrow reveal" style="color:var(--amber)">Chapter 03 — Ignition</div>
+      <div class="idx reveal" data-d="1">03</div><h2 class="reveal" data-d="1">IGNITION</h2>
+      <p class="reveal" data-d="2">マネタイズに才能はいらない。<br>必要なのはやる気と少しの知識のみ。</p>
+    </section>
+    <section class="chapter right" id="voice" data-stage="voice">
+      <div class="eyebrow reveal" style="color:var(--green)">Chapter 04 — Voice</div>
+      <div class="idx reveal" data-d="1">04</div><h2 class="reveal" data-d="1">VOICE</h2>
+      <p class="reveal" data-d="2">売れないまま終わるか。<br>片手間で売れる側に来るか。</p>
+    </section>
+    <section class="join" id="join" data-stage="join">
+      <h2 class="reveal">JOIN THE<br>SUKEADS</h2>
+      <p class="reveal" data-d="1">準備はできたか？<br>ようこそ。<br>AI×Threadsの極地へ</p>
+      <a href="https://line.me/R/ti/p/%40570qdjfq" class="line-cta" id="lineCta" target="_blank" rel="noopener noreferrer"><span class="pulse"></span><span>無料でプレゼントを受け取る</span></a>
+    </section>
+  </main>
+  <footer><div class="fg"><div class="big">Sukeads</div><div class="made">What if I told you — <b>Claude made this.</b></div></div></footer>
+
+  <script>
+    (function(){var box=document.getElementById('err'),s=0;function show(m){if(s>2)return;s++;box.style.display='block';box.textContent='⚠ '+m;}
+    addEventListener('error',e=>show((e.message||'error')));addEventListener('unhandledrejection',()=>show('load error'));window.__err=show;})();
+  </script>
+  <script src="config.js"></script>  <!-- 設定は config.js（window.LP_CONFIG）。無い場合は下の既定CONFIGで動く -->
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}</script>
+  <script type="module">
+  import * as THREE from 'three';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+  import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+  import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+  import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+  import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+  import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js';
+
+  /* ==================================================================
+     ▼▼▼ ここだけ書き換えれば別ブランドのLPになる（CONFIG）▼▼▼
+     文章・色・背景・フォント・CTAリンクは全部ここ。3D演出の形（球/DNA/格子/螺旋/砂時計）は共通エンジン側。
+     ※ 通常は config.js（window.LP_CONFIG）が使われる。下の値は config.js が無い時の既定。
+     ================================================================== */
+  const CONFIG = window.LP_CONFIG || {
+    brand: 'Sukeads',                                 // FVの立体文字・ヘッダー・フッター・タブ名
+    tagline: '才能じゃない。設計だ。',                   // 左上の小さいコピー
+    location: 'N 35.6762° / E 139.6503°',              // 左下の座標風テキスト（飾り）
+    preloader: 'WEAVING WORLDS',                       // ローディング中の文字
+    hero: { sub: '凡人だからこそできる最強の戦術を。' },   // FVのサブ文
+    // 4つの章（スクロール順）。accent=小見出しの色 / shape=粒子が集まる形（下の「形ライブラリ」参照。'emoji:🍞' で任意の絵文字シルエットにもなる）
+    chapters: [
+      { label:'Chapter 01 — Connection', idx:'01', title:'CONNECTION', accent:'var(--cyan)', shape:'sphere',
+        body:'足りないのは新しいノウハウじゃない。<br>ノウハウコレクターから卒業しろ。' },
+      { label:'Chapter 02 — Algorithm', idx:'02', title:'ALGORITHM', accent:'var(--violet)', shape:'dna',
+        body:'Threadsをハックしろ。<br>プラットフォームに踊らされるな。' },
+      { label:'Chapter 03 — Ignition', idx:'03', title:'IGNITION', accent:'var(--amber)', shape:'grid',
+        body:'マネタイズに才能はいらない。<br>必要なのはやる気と少しの知識のみ。' },
+      { label:'Chapter 04 — Voice', idx:'04', title:'VOICE', accent:'var(--green)', shape:'helix',
+        body:'売れないまま終わるか。<br>片手間で売れる側に来るか。' },
+    ],
+    join: {
+      heading: 'JOIN THE<br>SUKEADS',                  // 最終セクションの見出し
+      font: "'Syncopate',sans-serif",                 // ※別フォントにする時は fonts.google にも追加する
+      shape: 'hourglass',                             // 最終画面の粒子の形
+      body: '準備はできたか？<br>ようこそ。<br>AI×Threadsの極地へ',
+      ctaText: '無料でプレゼントを受け取る',
+      ctaUrl: 'https://line.me/R/ti/p/%40570qdjfq',    // ← LINE誘導先URL（%40=@。'#'にすると動かないボタンに戻る）
+    },
+    /* 形ライブラリ（shapeに指定できる名前）：
+       sphere球 dna二重螺旋 grid格子 helix螺旋 hourglass砂時計 torus輪 heartハート leaf葉 flower花 wave波
+       galaxy銀河 mountain山 crystal結晶 tornado渦 moon三日月 star星 cupカップ
+       'emoji:🍞' 任意の絵文字シルエット（パン・ケーキ・コーヒー等の"具体物"はこれが最強） / 'text:WORD' 単語シルエット */
+    fonts: {
+      google: [],                                      // 追加で読み込むGoogle Fonts（例 'Orbitron:wght@700'）
+      display: "'Anton',sans-serif",                  // 見出し（章タイトル・番号・ブランド表示）
+      serif: "'Fraunces',Georgia,serif",              // 本文（章の文章）
+      hero3d: 'helvetiker',                            // FVの立体文字: helvetiker(ゴシック)/optimer/gentilis(セリフ=上品)/droid-sans/droid-serif
+    },
+    // UIの差し色とCTAボタン色。accent=HUD/プリロータ等の金色ポジション
+    palette: { accent:'#ffc46b', accent2:'#6fe9ff', accent3:'#ff7a18', cta:'#06c755', ctaInk:'#03361b' },
+    footer: 'What if I told you — <b>Claude made this.</b>',
+    background: 'grid-all',                            // 'grid-all'(全章グリッド) / 'grid-hero'(FVのみ) / 'nebula'(星雲のみ) / 'field'(自然・畑)
+    // 各章の色 [背景A, アクセントB]（HERO / CONNECTION / ALGORITHM / IGNITION / VOICE / JOIN の6つ）
+    tints: [[0x081634,0x2f6bd6],[0x0a3a55,0x2bd6e6],[0x241a66,0x7a5cff],[0x5a1e08,0xff7a18],[0x0e3b30,0x3df0c0],[0x0c3a2e,0x2fd6a0]],
+  };
+  /* ▲▲▲ CONFIGここまで ▲▲▲ */
+
+  // CONFIG → DOMへ流し込み（文言・色・フォント・CTA）。3D側は CONFIG.brand / CONFIG.tints / CONFIG.background / shape を直接参照
+  const _hx=v=>'#'+(v&0xffffff).toString(16).padStart(6,'0');
+  const _rgb=h=>{const a=parseInt(h.slice(1),16);return [(a>>16)&255,(a>>8)&255,a&255];};
+  const _mix=(h1,h2,t)=>{const a=_rgb(h1),b=_rgb(h2);return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
+  const _rgba=(h,al)=>{const a=_rgb(h);return `rgba(${a[0]},${a[1]},${a[2]},${al})`;};
+  function applyConfig(){const C=CONFIG,q=s=>document.querySelector(s);
+    try{
+      // fonts: Google Fonts追加読込 + 見出し/本文フォントのCSS変数差し替え
+      const R=document.documentElement.style;
+      if(C.fonts){
+        if(C.fonts.google&&C.fonts.google.length){const l=document.createElement('link');l.rel='stylesheet';
+          l.href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
+        if(C.fonts.display)R.setProperty('--disp',C.fonts.display);
+        if(C.fonts.serif)R.setProperty('--serif',C.fonts.serif);}
+      // palette: UI差し色（--gold/--cyan/--amber）とCTAボタン色
+      if(C.palette){
+        if(C.palette.accent)R.setProperty('--gold',C.palette.accent);
+        if(C.palette.accent2)R.setProperty('--cyan',C.palette.accent2);
+        if(C.palette.accent3)R.setProperty('--amber',C.palette.accent3);
+        if(C.palette.cta){R.setProperty('--cta',C.palette.cta);R.setProperty('--cta-ink',C.palette.ctaInk||'#08210f');
+          R.setProperty('--cta-sh',_rgba(C.palette.cta,.3));R.setProperty('--cta-sh2',_rgba(C.palette.cta,.5));R.setProperty('--cta-pl',_rgba(C.palette.ctaInk||'#08210f',.5));}}
+      document.title=C.brand+' — Woven Worlds';
+      const b=q('.brand'); if(b&&b.lastChild)b.lastChild.nodeValue=C.brand;
+      const h1=q('.hero h1'); if(h1)h1.textContent=C.brand;
+      const sub=q('.hero .sub'); if(sub)sub.textContent=C.hero.sub;
+      const tl=q('.fx.tl'); if(tl)tl.textContent=C.tagline;
+      const lc=q('.fx.br'); if(lc)lc.textContent=C.location;
+      const pl=q('#pre .lbl'); if(pl)pl.textContent=C.preloader;
+      const hud0=q('#hud'); if(hud0)hud0.textContent=C.brand+' · — FPS';
+      document.querySelectorAll('main .chapter').forEach((sec,i)=>{const cc=C.chapters[i]; if(!cc)return;
+        const eb=sec.querySelector('.eyebrow'); if(eb){eb.textContent=cc.label; if(cc.accent)eb.style.color=cc.accent;}
+        const idx=sec.querySelector('.idx'); if(idx)idx.textContent=cc.idx;
+        const h2=sec.querySelector('h2'); if(h2)h2.textContent=cc.title;
+        const p=sec.querySelector('p'); if(p)p.innerHTML=cc.body;});
+      const jh=q('#join h2'); if(jh){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;
+        // JOIN見出しのグラデ＆グローを tints[JOIN] のアクセント色から自動生成（世界観と自動で揃う）
+        const jc=_hx(C.tints[5][1]);
+        jh.style.backgroundImage=`linear-gradient(120deg,#ffffff,${_mix(jc,'#ffffff',0.45)} 46%,${jc} 76%,${_mix(jc,'#ffffff',0.6)})`;
+        jh.style.filter=`drop-shadow(0 0 34px ${_rgba(jc,0.30)})`;}
+      const jp=q('#join p'); if(jp)jp.innerHTML=C.join.body;
+      const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1])sp[1].textContent=C.join.ctaText;
+        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}}
+      const fb=q('.fg .big'); if(fb)fb.textContent=C.brand;
+      const fm=q('.fg .made'); if(fm)fm.innerHTML=C.footer;
+    }catch(e){window.__err&&window.__err('CONFIG適用エラー');}
+  }
+  applyConfig();
+
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches, touch=matchMedia('(hover:none)').matches;
+  const lowPerf = touch || (navigator.hardwareConcurrency||8)<=4;
+  const lerp=(a,b,t)=>a+(b-a)*t; const QS=new URLSearchParams(location.search);
+
+  const clock=document.getElementById('clock'),pad=n=>(n<10?'0':'')+n;
+  (function tk(){const d=new Date();clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+' JST';setTimeout(tk,1000);})();
+  let ctx=innerWidth/2,cty=innerHeight/2,cx=ctx,cy=cty;const cur=document.getElementById('cur'),cd=document.getElementById('curd');
+  if(!touch){addEventListener('mousemove',e=>{ctx=e.clientX;cty=e.clientY;cd.style.transform=`translate(${ctx}px,${cty}px) translate(-50%,-50%)`;});
+    document.querySelectorAll('a,.line-cta,#switch button,#switch .nav').forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('big'));el.addEventListener('mouseleave',()=>cur.classList.remove('big'));});}
+
+  const canvas=document.getElementById('gl');
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true,powerPreference:'high-performance'});}catch(e){window.__err&&window.__err('WebGL unavailable');}
+  let curDPR=Math.min(devicePixelRatio||1, lowPerf?1.15:1.6);
+  renderer.setPixelRatio(curDPR);renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0x000000,0);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.78;
+  const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x040406,0.028);
+  const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,0.1,100);camera.position.set(0,0,9.0);
+  scene.add(new THREE.AmbientLight(0xffffff,.5));
+  const pl1=new THREE.PointLight(0x9ec5ff,40,40);pl1.position.set(5,4,6);const pl2=new THREE.PointLight(0x6fe9ff,30,40);pl2.position.set(-5,-3,5);scene.add(pl1,pl2);
+  try{const pmrem=new THREE.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;}catch(e){}
+  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();window.__err&&window.__err('GL lost');},false);
+  canvas.addEventListener('webglcontextrestored',()=>location.reload(),false);
+
+  // ---------- nebula (tinted) ----------
+  const nU={uTime:{value:0},uA:{value:new THREE.Color(0xff5a1a)},uB:{value:new THREE.Color(0x2bc6e6)},uWarp:{value:0},uHero:{value:1},uField:{value:0}};
+  const neb=new THREE.Mesh(new THREE.SphereGeometry(42,24,24),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:nU,
+    vertexShader:`varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`precision highp float;varying vec3 vP;uniform float uTime;uniform vec3 uA,uB;uniform float uWarp,uHero,uField;
+      mat3 m=mat3(.0,.8,.6,-.8,.36,-.48,-.6,-.48,.64);
+      float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+      float n(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),
+                   mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+      float fbm(vec3 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*n(p);p=m*p*2.03;a*=.5;}return s;}
+      void main(){vec3 d=normalize(vP);vec3 q=d*2.3;q.z+=uTime*.06;
+        q.xy+=vec2(sin(d.y*3.0+uTime*.22),cos(d.x*3.0+uTime*.17))*(0.14+uWarp*0.7);
+        float nb=pow(fbm(q*1.4+uTime*.04),1.4);
+        float nb2=fbm(q*1.0+uTime*.03+11.0);
+        float nb3=fbm(q*0.55-uTime*.05+4.0);
+        vec3 c=vec3(.012,.013,.028);
+        c=mix(c,uA,smoothstep(.34,.96,nb)*.66*(.45+.55*d.x));
+        c=mix(c,uB,smoothstep(.30,.92,nb2)*.52*(.5-.42*d.x));
+        // 幻想的な第3色：uA/uBの中間を少し持ち上げた淡い光のもや
+        vec3 dream=mix(uA,uB,0.5)+vec3(0.05,0.0,0.08);
+        c+=dream*smoothstep(.55,1.0,nb3)*0.30;
+        // オーロラ状リボン：ゆらぐ帯がふわっと流れる
+        float band=fbm(q*vec3(0.7,1.8,0.7)+vec3(0.0,uTime*0.06,uTime*0.02));
+        float ribbon=smoothstep(.46,.62,band)*smoothstep(.86,.62,band);
+        c+=mix(uB,uA,0.35)*ribbon*0.32*(0.6+0.4*d.y);
+        // きらめく星2層（明るく瞬く層＋淡い密度層）
+        float sf=h(floor(d*260.));float tw=0.5+0.5*sin(uTime*2.4+sf*120.0);
+        c+=vec3(0.85,0.92,1.0)*step(.9970,sf)*(0.45+0.75*tw);
+        float sf2=h(floor(d*150.)+7.0);
+        c+=vec3(0.7,0.8,1.0)*step(.9955,sf2)*0.22;
+        vec3 nebFinal=c*(.6+uWarp*0.2);
+        // ===== サイバーグリッド（無限フロア＋地平線）。各章の色(uB)で染めて星雲の上に重ねる。uHeroで強さ制御（全章ON=1 / HEROのみ=1-ss(0.1,0.7,uIdx) / 撤去=0）=====
+        vec3 gtint=uB*1.15+vec3(0.04);
+        vec3 grid=vec3(0.0);float dy=d.y;
+        if(dy<-0.012){vec2 fp=d.xz/(-dy);fp*=1.6;fp.y+=uTime*0.7;
+          vec2 gl2=abs(fract(fp)-0.5);float gln=min(gl2.x,gl2.y);
+          float line=smoothstep(0.05,0.0,gln)*smoothstep(0.0,0.22,-dy);
+          grid+=gtint*line*1.3;}
+        grid+=gtint*exp(-abs(dy)*9.0)*0.5;
+        float fmask=smoothstep(0.0,-0.25,dy);
+        vec3 outc=nebFinal*(1.0-0.45*uHero*fmask)+grid*uHero;
+        // ===== 自然/畑モード（background:'field'）：明け方の空＋畝が続く畑＋舞う花粉。各章の色(uA/uB)で緑〜金に染まる =====
+        if(uField>0.5){
+          vec3 skyTop=vec3(0.03,0.055,0.07);
+          vec3 skyHor=vec3(0.14,0.13,0.10)+uA*0.30;
+          vec3 sky=mix(skyHor,skyTop,smoothstep(0.0,0.8,d.y));
+          sky+=vec3(1.0,0.82,0.42)*exp(-abs(d.y-0.02)*7.0)*0.5;
+          vec3 col=sky;float dyf=d.y;
+          if(dyf<-0.010){vec2 fp=d.xz/(-dyf);
+            float rows=abs(fract(fp.x*1.3)-0.5);
+            float furrow=smoothstep(0.14,0.0,rows);
+            float fade=smoothstep(0.0,0.5,-dyf);
+            vec3 soil=mix(vec3(0.05,0.08,0.04),uA*0.6,0.5);
+            col=mix(sky,soil,fade);
+            col+=uB*furrow*fade*0.9;
+            col+=uB*fbm(vec3(fp.x*2.0,fp.y*0.5+uTime*0.05,0.0))*fade*0.12;}
+          col+=vec3(1.0,0.86,0.5)*exp(-abs(dyf)*10.0)*0.16;
+          if(dyf>-0.05){float pf=h(floor(d*180.0));float tw2=0.5+0.5*sin(uTime*1.6+pf*90.0);
+            col+=vec3(1.0,0.92,0.6)*step(0.9965,pf)*(0.4+0.6*tw2);}
+          outc=col*(0.9+uWarp*0.15);
+        }
+        gl_FragColor=vec4(outc,1.);}`}));
+  scene.add(neb);
+
+  // ================= GPU PARTICLE FIELD（散布→集合 / frosted-glass scatter-gather）=================
+  // 数万個の発光粒子が6つの形を作り、遷移時に"すりガラス"みたいに散らばって(scatter)→次の形に集まる(gather)。線をやめてチープさを排除。
+  const N=lowPerf?22000:70000;
+  const a0=new Float32Array(N*3),a1=new Float32Array(N*3),a2=new Float32Array(N*3),a3=new Float32Array(N*3),a4=new Float32Array(N*3),a5=new Float32Array(N*3),aRand=new Float32Array(N*3),aSeed=new Float32Array(N);
+  const _CZ=Math.cos(-0.34),_SZ=Math.sin(-0.34);
+  const hh=(n)=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);};
+  for(let i=0;i<N;i++){
+    const r1=hh(i+0.13),r2=hh(i*1.7+2.3),r3=hh(i*2.9+5.1);
+    const z0=r1*2-1,ph0=r2*6.2832,sr=Math.sqrt(Math.max(0,1-z0*z0));
+    aRand[i*3]=sr*Math.cos(ph0);aRand[i*3+1]=z0;aRand[i*3+2]=sr*Math.sin(ph0);aSeed[i]=r3;
+  }
+  // ================= 形ライブラリ =================
+  // 各章の粒子が集まる形。CONFIG.chapters[].shape / CONFIG.join.shape で選ぶ。
+  // 'emoji:🍞' / 'text:WORD' は canvasに描いてシルエットを粒子サンプリング（具体物はこれが最強）。
+  const TAU=6.28318530718;
+  const SHAPES={
+    sphere(a){for(let i=0;i<N;i++){const yy=1-2*((i+0.5)/N),rr=Math.sqrt(Math.max(0,1-yy*yy)),phi=i*2.399963267,R=2.55+(hh(i*0.7+9.2)-0.5)*0.7;a[i*3]=rr*Math.cos(phi)*R;a[i*3+1]=yy*R;a[i*3+2]=rr*Math.sin(phi)*R;}},
+    dna(a){const TW=2.5,H=9.0,off=2.3,R=1.62;for(let i=0;i<N;i++){const r1=hh(i+0.13),r2=hh(i*1.7+2.3),r4=hh(i*0.7+9.2),r5=hh(i*3.3+1.1),jx=r4-0.5,jz=hh(i*5.1+0.9)-0.5;let x,y,zz;
+      if(r2<0.18){const f=r4,ang=f*TW*TAU,u=r5,ax=Math.cos(ang)*R,az=Math.sin(ang)*R,bx=Math.cos(ang+off)*R,bz=Math.sin(ang+off)*R;x=ax+(bx-ax)*u+jx*0.10;y=(f-0.5)*H;zz=az+(bz-az)*u+jz*0.10;}
+      else{const which=i&1,t=r1,th=t*TW*TAU+which*off,RR=R+jx*0.16;x=Math.cos(th)*RR;y=(t-0.5)*H+(r5-0.5)*0.10;zz=Math.sin(th)*RR;}
+      a[i*3]=x*_CZ-y*_SZ;a[i*3+1]=x*_SZ+y*_CZ;a[i*3+2]=zz;}},
+    grid(a){for(let i=0;i<N;i++){let x=(hh(i+0.13)-0.5)*7.0,y=(hh(i*1.7+2.3)-0.5)*6.4;const z2=Math.sin(x*1.3+y*1.05)*0.72,g=Math.hypot(x,y)*0.17,c=Math.cos(g),s2=Math.sin(g);a[i*3]=x*c-y*s2;a[i*3+1]=x*s2+y*c;a[i*3+2]=z2+(hh(i*5.1+0.9)-0.5)*0.8;}},
+    helix(a){const TW=3.0,H=6.4,off=Math.PI;for(let i=0;i<N;i++){const R=1.5+(hh(i*0.7+9.2)-0.5)*0.12,which=i&1,t=hh(i+0.13),th=t*TW*TAU+which*off;a[i*3]=Math.cos(th)*R;a[i*3+1]=(t-0.5)*H+(hh(i*3.3+1.1)-0.5)*0.10;a[i*3+2]=Math.sin(th)*R;}},
+    hourglass(a){for(let i=0;i<N;i++){const yy=(hh(i+0.13)-0.5)*5.6,rr=0.06+Math.abs(yy)*0.74,g=hh(i*1.7+2.3)*TAU;a[i*3]=Math.cos(g)*rr+(hh(i*0.7+9.2)-0.5)*0.1;a[i*3+1]=yy;a[i*3+2]=Math.sin(g)*rr+(hh(i*5.1+0.9)-0.5)*0.1;}},
+    torus(a){const R=1.95,r=0.62,tl=0.5;for(let i=0;i<N;i++){const u=hh(i+0.13)*TAU,v=hh(i*1.7+2.3)*TAU,rr=r*(0.4+0.6*Math.sqrt(hh(i*2.9+5.1)));const x=(R+rr*Math.cos(v))*Math.cos(u),yy=rr*Math.sin(v),z=(R+rr*Math.cos(v))*Math.sin(u);a[i*3]=x;a[i*3+1]=yy*Math.cos(tl)-z*Math.sin(tl)*0.45;a[i*3+2]=yy*Math.sin(tl)+z*Math.cos(tl);}},
+    heart(a){for(let i=0;i<N;i++){let x=0,y=0,ok=false;for(let k=0;k<14;k++){x=(hh(i*3.1+k*7.7+0.4)-0.5)*2.9;y=(hh(i*5.3+k*3.3+1.9)-0.5)*2.9;const f=Math.pow(x*x+y*y-1,3)-x*x*y*y*y;if(f<0){ok=true;break;}}
+      if(!ok){x=0;y=0.5;}a[i*3]=x*1.85;a[i*3+1]=y*1.85+0.1;a[i*3+2]=(hh(i*7.7+3.2)-0.5)*(0.5-0.3*Math.min(1,x*x+y*y));}},
+    leaf(a){const ct=Math.cos(0.6),st=Math.sin(0.6);for(let i=0;i<N;i++){const u=hh(i+0.13),w=Math.pow(Math.sin(Math.PI*u),0.85);let x=(u-0.5)*4.4,y=(hh(i*1.7+2.3)-0.5)*w*1.6;if(hh(i*2.9+5.1)<0.10)y*=0.05;/* 主脈 */
+      const z=Math.sin(u*Math.PI)*0.001+(hh(i*5.1+0.9)-0.5)*0.16+y*y*0.25;/* 葉の反り */
+      a[i*3]=x*ct-y*st;a[i*3+1]=x*st+y*ct;a[i*3+2]=z;}},
+    flower(a){const K=5;for(let i=0;i<N;i++){if(hh(i*2.9+5.1)<0.14){const g=hh(i+0.13)*TAU,r=Math.sqrt(hh(i*1.7+2.3))*0.55;a[i*3]=Math.cos(g)*r;a[i*3+1]=Math.sin(g)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.2+0.08;continue;}
+      const p=Math.floor(hh(i*4.3+0.7)*K),ph=(hh(i*1.7+2.3)-0.5)*(TAU/K)*0.92,th=p*TAU/K+ph+TAU/4;
+      const env=Math.cos(ph*K/2),r=2.5*Math.pow(hh(i*3.3+1.1),0.5)*Math.max(0.1,env);
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=Math.sin(th)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.2-r*0.06;}},
+    wave(a){const ct=Math.cos(-0.55),st=Math.sin(-0.55);for(let i=0;i<N;i++){const x=(hh(i+0.13)-0.5)*7.4,z=(hh(i*1.7+2.3)-0.5)*4.6;let y=Math.sin(x*1.15+z*0.7)*0.55+Math.sin(x*2.3-z*1.1)*0.22-0.2;y+=(hh(i*5.1+0.9)-0.5)*0.1;
+      a[i*3]=x;a[i*3+1]=y*ct-z*st;a[i*3+2]=y*st+z*ct;}},
+    galaxy(a){for(let i=0;i<N;i++){if(hh(i*4.3+0.7)<0.12){const u=hh(i+0.13)*2-1,g=hh(i*1.7+2.3)*TAU,rr=Math.sqrt(Math.max(0,1-u*u))*0.6;a[i*3]=rr*Math.cos(g);a[i*3+1]=u*0.55;a[i*3+2]=rr*Math.sin(g);continue;}
+      const arm=i&1,t=Math.pow(hh(i+0.13),0.72),th=t*3.4*Math.PI+arm*Math.PI+(hh(i*1.7+2.3)-0.5)*(0.9-t*0.5);const r=0.3+t*2.6;
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=(hh(i*3.3+1.1)-0.5)*0.34*(1-t*0.6);a[i*3+2]=Math.sin(th)*r*0.9;}},
+    mountain(a){for(let i=0;i<N;i++){const h=Math.pow(hh(i+0.13),0.78),g=hh(i*1.7+2.3)*TAU;const r=(1-h)*2.8*(0.72+0.32*hh(i*3.3+1.1)+0.16*Math.sin(g*5+h*9));a[i*3]=Math.cos(g)*r;a[i*3+1]=h*3.6-1.4;a[i*3+2]=Math.sin(g)*r*0.72;}},
+    crystal(a){for(let i=0;i<N;i++){let u=hh(i+0.13),v=hh(i*1.7+2.3);if(u+v>1){u=1-u;v=1-v;}const w=1-u-v;
+      const sx=hh(i*2.9+5.1)<0.5?-1:1,sy=hh(i*3.3+1.1)<0.5?-1:1,sz=hh(i*5.1+0.9)<0.5?-1:1,pf=1+(hh(i*7.7+3.2)-0.5)*0.06;
+      a[i*3]=sx*u*1.7*pf;a[i*3+1]=sy*v*2.5*pf;a[i*3+2]=sz*w*1.7*pf;}},
+    tornado(a){for(let i=0;i<N;i++){const t=hh(i+0.13),th=t*5*TAU+(hh(i*1.7+2.3)-0.5)*0.8;const r=(0.22+Math.pow(t,1.35)*2.0)*(0.82+0.36*hh(i*3.3+1.1));
+      a[i*3]=Math.cos(th)*r;a[i*3+1]=(t-0.5)*5.4;a[i*3+2]=Math.sin(th)*r;}},
+    moon(a){for(let i=0;i<N;i++){let x=0,y=0,z=0;for(let k=0;k<10;k++){const u=hh(i*3.1+k*7.7+0.4)*2-1,g=hh(i*5.3+k*3.3+1.9)*TAU,rr=Math.sqrt(Math.max(0,1-u*u));x=rr*Math.cos(g)*2.3;y=u*2.3;z=rr*Math.sin(g)*2.3;
+      const ex=x-1.05,ez=z-0.4;if(ex*ex+y*y+ez*ez>1.95*1.95)break;}a[i*3]=x;a[i*3+1]=y;a[i*3+2]=z;}},
+    star(a){for(let i=0;i<N;i++){const th=hh(i+0.13)*TAU;const f=((th/TAU*5+0.25)%1),w=Math.abs(f*2-1);const rmax=1.05+(2.6-1.05)*Math.pow(1-w,1.6);const r=Math.sqrt(hh(i*1.7+2.3))*rmax;
+      a[i*3]=Math.cos(th-Math.PI/2)*r;a[i*3+1]=-Math.sin(th-Math.PI/2)*r;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*0.3;}},
+    cup(a){for(let i=0;i<N;i++){const s=hh(i*4.3+0.7);
+      if(s<0.62){const g=hh(i+0.13)*TAU,r=1.25*(1+(hh(i*2.9+5.1)-0.5)*0.05);a[i*3]=Math.cos(g)*r;a[i*3+1]=(hh(i*1.7+2.3)-0.5)*2.1-0.1;a[i*3+2]=Math.sin(g)*r;}
+      else if(s<0.72){const g=hh(i+0.13)*TAU;a[i*3]=Math.cos(g)*1.27;a[i*3+1]=0.95+(hh(i*1.7+2.3)-0.5)*0.06;a[i*3+2]=Math.sin(g)*1.27;}
+      else if(s<0.88){const ph=(hh(i+0.13)-0.5)*2.4,r=0.62,tb=0.11;const cx=1.25+0.15;a[i*3]=cx+Math.cos(ph)*r*0.8+(hh(i*2.9+5.1)-0.5)*tb;a[i*3+1]=Math.sin(ph)*r+0.05;a[i*3+2]=(hh(i*5.1+0.9)-0.5)*tb*2;}
+      else{const g=hh(i+0.13)*TAU,r=1.35+Math.sqrt(hh(i*1.7+2.3))*0.85;a[i*3]=Math.cos(g)*r;a[i*3+1]=-1.2+(hh(i*2.9+5.1)-0.5)*0.05;a[i*3+2]=Math.sin(g)*r;}}},
+  };
+  // 絵文字/単語 → canvasに描いてシルエットを粒子化
+  function sampleGlyph(txt,isEmoji){try{const S=512,cv=document.createElement('canvas');cv.width=cv.height=S;const g=cv.getContext('2d',{willReadFrequently:true});
+    g.textAlign='center';g.textBaseline='middle';let fs=isEmoji?400:250;
+    const fam=isEmoji?'"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif':((CONFIG.fonts&&CONFIG.fonts.display)||"'Anton',sans-serif");
+    g.font=(isEmoji?'':'900 ')+fs+'px '+fam;let w=g.measureText(txt).width;if(w>S*0.92){fs=fs*S*0.92/w;g.font=(isEmoji?'':'900 ')+fs+'px '+fam;}
+    g.fillStyle='#fff';g.fillText(txt,S/2,S/2+(isEmoji?8:0));
+    const d=g.getImageData(0,0,S,S).data,A=(x,y)=>(x<0||y<0||x>=S||y>=S)?0:d[(y*S+x)*4+3];
+    // 輪郭(edge)と内部(inner)を分ける：輪郭に粒を集めるとネオンサイン風にくっきり読める＆全部内部に置くと白飛びする
+    const edge=[],inner=[];
+    for(let y=0;y<S;y+=2)for(let x=0;x<S;x+=2){if(A(x,y)>110){(A(x-4,y)<=110||A(x+4,y)<=110||A(x,y-4)<=110||A(x,y+4)<=110)?edge.push(x,y):inner.push(x,y);}}
+    return (edge.length+inner.length)>160?{edge,inner,S}:null;}catch(e){return null;}}
+  function buildGlyph(a,txt,isEmoji){const smp=sampleGlyph(txt,isEmoji);if(!smp){SHAPES.sphere(a);return false;}
+    const{edge,inner,S}=smp,ME=edge.length/2,MI=inner.length/2,sc=5.4/S;
+    for(let i=0;i<N;i++){const useE=(hh(i*4.7+0.9)<0.45&&ME>30)||MI<30;
+      const L=useE?edge:inner,M=useE?ME:MI,jit=useE?1.2:3.2,zs=useE?0.22:0.85;
+      const k=Math.floor(hh(i*1.31+2.7)*M)*2;const px=L[k]+(hh(i*2.17+1.1)-0.5)*jit*2,py=L[k+1]+(hh(i*3.71+0.4)-0.5)*jit*2;
+      a[i*3]=(px-S/2)*sc;a[i*3+1]=(S/2-py)*sc;a[i*3+2]=(hh(i*5.13+7.7)-0.5)*zs;}return true;}
+  const _glyphLate=[];// Webフォント読込後に text: シルエットを再生成（初回はフォールバック字形になるため）
+  function buildShape(arr,spec,slot){spec=String(spec||'sphere');
+    if(spec.startsWith('emoji:'))buildGlyph(arr,spec.slice(6).trim(),true);
+    else if(spec.startsWith('text:')){buildGlyph(arr,spec.slice(5).trim(),false);_glyphLate.push([arr,spec.slice(5).trim(),slot]);}
+    else (SHAPES[spec]||SHAPES.sphere)(arr);}
+  buildShape(a1,(CONFIG.chapters[0]||{}).shape||'sphere',1);
+  buildShape(a2,(CONFIG.chapters[1]||{}).shape||'dna',2);
+  buildShape(a3,(CONFIG.chapters[2]||{}).shape||'grid',3);
+  buildShape(a4,(CONFIG.chapters[3]||{}).shape||'helix',4);
+  buildShape(a5,(CONFIG.join||{}).shape||'hourglass',5);
+  const pgeo=new THREE.BufferGeometry();
+  pgeo.setAttribute('position',new THREE.BufferAttribute(a0,3));
+  pgeo.setAttribute('a0',new THREE.BufferAttribute(a0,3));pgeo.setAttribute('a1',new THREE.BufferAttribute(a1,3));pgeo.setAttribute('a2',new THREE.BufferAttribute(a2,3));pgeo.setAttribute('a3',new THREE.BufferAttribute(a3,3));pgeo.setAttribute('a4',new THREE.BufferAttribute(a4,3));pgeo.setAttribute('a5',new THREE.BufferAttribute(a5,3));pgeo.setAttribute('aRand',new THREE.BufferAttribute(aRand,3));pgeo.setAttribute('aSeed',new THREE.BufferAttribute(aSeed,1));
+  pgeo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),120);
+  if(_glyphLate.length&&document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{_glyphLate.forEach(([arr,txt,slot])=>{buildGlyph(arr,txt,false);const at=pgeo.attributes['a'+slot];if(at)at.needsUpdate=true;});});
+  const pU={uIdx:{value:0},uTime:{value:0},uScatter:{value:1.5},uSize:{value:lowPerf?34:42},uPix:{value:Math.min(devicePixelRatio||1,2)},uColor:{value:new THREE.Color(0x9fc4ff)},uOpacity:{value:0},uHeroScale:{value:1}};
+  const pMat=new THREE.ShaderMaterial({uniforms:pU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`uniform float uIdx,uTime,uScatter,uSize,uPix,uHeroScale;attribute vec3 a0,a1,a2,a3,a4,a5,aRand;attribute float aSeed;varying float vG;
+      void main(){vec3 p=a0*uHeroScale;p=mix(p,a1,smoothstep(0.22,0.82,clamp(uIdx,0.,1.)));p=mix(p,a2,smoothstep(0.22,0.82,clamp(uIdx-1.,0.,1.)));p=mix(p,a3,smoothstep(0.22,0.82,clamp(uIdx-2.,0.,1.)));p=mix(p,a4,smoothstep(0.22,0.82,clamp(uIdx-3.,0.,1.)));p=mix(p,a5,smoothstep(0.22,0.82,clamp(uIdx-4.,0.,1.)));
+        float fr=fract(uIdx);float disp=pow(sin(fr*3.14159265),3.0)*uScatter*(0.5+aSeed);
+        p+=aRand*disp;p+=aRand*sin(uTime*0.7+aSeed*28.0)*0.010;
+        vG=0.6+0.4*aSeed+disp*0.14;
+        vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=uSize*(0.6+aSeed*0.7)*uPix/max(0.15,-mv.z);}`,
+    fragmentShader:`precision mediump float;uniform vec3 uColor;uniform float uOpacity;varying float vG;
+      void main(){float d=length(gl_PointCoord-0.5);if(d>0.5)discard;float core=smoothstep(0.5,0.13,d);float halo=smoothstep(0.5,0.0,d)*0.28;float a=core*core+halo;gl_FragColor=vec4(uColor*vG,a*uOpacity);}`});
+  const particleGroup=new THREE.Group();const points=new THREE.Points(pgeo,pMat);points.frustumCulled=false;particleGroup.add(points);scene.add(particleGroup);
+  let partOp=0;const _W=new THREE.Color(0xffffff);
+  // HERO は金属文字メッシュが主役 → 粒子のHERO形は球(a1)に差し替え（HEROでは非表示）。HTML見出しも隠す
+  a0.set(a1);pgeo.attributes.a0.needsUpdate=true;pgeo.attributes.position.needsUpdate=true;
+  {const _h1=document.querySelector('.hero h1');if(_h1)_h1.style.opacity='0';}
+
+  // HERO DNA は専用メッシュを廃止 → 線束システム(idx0)で一本化。継ぎ目ゼロ・太さ統一・立体感は worldUnits 線の奥行きで担保
+  // JOIN: 粒子(砂時計)の収束が主役。以前あった発光ジェム(緑の玉)は「JOINで見えない／FV遷移で一瞬出て邪魔」と却下 → 撤去。joinLift(粒子の持ち上げ)だけ残す
+  let joinLift=0;
+
+  // ===== FV（HERO）: 知的なエッジ発光メタルの「THREADS」。スクロールで細かく砕けて散り、CONNECTIONの粒子へ受け渡す =====
+  const ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+  function fvAddDisp(mat){mat.userData.uD={value:0};mat.onBeforeCompile=(sh)=>{sh.uniforms.uD=mat.userData.uD;
+    sh.vertexShader='uniform float uD;\n'+sh.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n vec3 cl=floor(position.xyz*9.0);\n float hs=fract(sin(dot(cl,vec3(12.9,78.2,37.7)))*43758.5);\n vec3 dir=vec3(hs-0.5,fract(hs*7.0)-0.5,fract(hs*3.0)-0.5)*2.0;\n transformed += dir*uD*(0.45+hs*1.05);');};return mat;}
+  const fvGroup=new THREE.Group();fvGroup.visible=false;scene.add(fvGroup);
+  const fvSpin=new THREE.Group();fvGroup.add(fvSpin);let fvBodyMat=null,fvEdgeMat=null,fvW=0;
+  // スマホ縦だと横長の「Sukeads」が見切れる → 視野幅に収まるよう縮小（s は最大1にクランプ＝PCのインパクト不変）。粒子のHERO形(a0)も同率縮小して金属→粒子の受け渡しズレを防ぐ
+  function fitFV(){if(!fvW||!isFinite(camera.aspect))return;const vis=2*9.0*Math.tan(camera.fov*Math.PI/360)*camera.aspect;const s=Math.min(1,vis*0.82/fvW);if(!isFinite(s))return;fvGroup.scale.setScalar(s);pU.uHeroScale.value=s;}
+  // FV幻想演出：文字の後ろに柔らかい発光ハロー（光のにじみ）。HEROだけ表示・スクロールで金属と一緒にフェード
+  let fvGlow=null;
+  {const sz=256,cv=document.createElement('canvas');cv.width=cv.height=sz;const gx=cv.getContext('2d');const rg=gx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz/2);rg.addColorStop(0,'rgba(255,255,255,0.95)');rg.addColorStop(0.22,'rgba(190,215,255,0.45)');rg.addColorStop(0.55,'rgba(120,150,235,0.14)');rg.addColorStop(1,'rgba(0,0,0,0)');gx.fillStyle=rg;gx.fillRect(0,0,sz,sz);
+   const gt=new THREE.CanvasTexture(cv);fvGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:gt,color:0x8fc0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));fvGlow.scale.set(13,7.5,1);fvGlow.position.z=-1.2;fvGroup.add(fvGlow);}
+  // FVの3Dフォント（CONFIG.fonts.hero3d）：helvetiker=ゴシック / optimer / gentilis=セリフ(上品) / droid-sans / droid-serif
+  const F3D={'helvetiker':'helvetiker_bold.typeface.json','optimer':'optimer_bold.typeface.json','gentilis':'gentilis_bold.typeface.json','droid-sans':'droid/droid_sans_bold.typeface.json','droid-serif':'droid/droid_serif_bold.typeface.json'};
+  const _f3d=F3D[(CONFIG.fonts&&CONFIG.fonts.hero3d)||'helvetiker']||F3D.helvetiker;
+  // エッジ発光・ハローの色はテーマ（tints[HERO]のアクセント）から自動生成 → どのテーマでも世界観が揃う
+  const _heroAcc=new THREE.Color(CONFIG.tints[0][1]).lerp(new THREE.Color(0xffffff),0.5);
+  if(fvGlow)fvGlow.material.color.copy(_heroAcc);
+  new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/fonts/'+_f3d,(font)=>{
+    const tg=new TextGeometry(CONFIG.brand,{font,size:1.5,height:0.42,curveSegments:8,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.034,bevelSegments:3});
+    tg.computeBoundingBox();const bb=tg.boundingBox;fvW=bb.max.x-bb.min.x;tg.translate(-(bb.max.x+bb.min.x)/2,-(bb.max.y+bb.min.y)/2,-(bb.max.z+bb.min.z)/2);
+    let body=tg;try{body=new TessellateModifier(0.14,6).modify(tg.clone().toNonIndexed());}catch(e){}
+    fvBodyMat=fvAddDisp(new THREE.MeshStandardMaterial({color:0xdde3ec,metalness:0.95,roughness:0.34,envMapIntensity:1.2,transparent:true,opacity:1}));
+    fvSpin.add(new THREE.Mesh(body,fvBodyMat));
+    fvEdgeMat=fvAddDisp(new THREE.LineBasicMaterial({color:_heroAcc.getHex(),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false}));
+    fvSpin.add(new THREE.LineSegments(new THREE.EdgesGeometry(tg,20),fvEdgeMat));
+    // 粒子のHERO形(a0)を金属メッシュ表面からサンプリング → 金属が砕けて"そのまま粒子になる"自然な受け渡し
+    try{const sp=body.attributes.position,triN=Math.floor(sp.count/3);
+      for(let i=0;i<N;i++){const tri=Math.floor(hh(i*1.1+0.3)*triN)*3;let r1=hh(i*2.3+0.7),r2=hh(i*3.7+0.1);if(r1+r2>1){r1=1-r1;r2=1-r2;}
+        const ax=sp.getX(tri),ay=sp.getY(tri),az=sp.getZ(tri),bx=sp.getX(tri+1),by=sp.getY(tri+1),bz=sp.getZ(tri+1),c2=sp.getX(tri+2),cy=sp.getY(tri+2),cz=sp.getZ(tri+2);
+        a0[i*3]=ax+(bx-ax)*r1+(c2-ax)*r2;a0[i*3+1]=ay+(by-ay)*r1+(cy-ay)*r2;a0[i*3+2]=az+(bz-az)*r1+(cz-az)*r2;}
+      pgeo.attributes.a0.needsUpdate=true;pgeo.attributes.position.needsUpdate=true;}catch(e){}
+    fitFV();
+  },undefined,()=>{window.__err&&window.__err('FVフォント読込失敗');});
+
+  // ---------- post: half-res bloom ----------
+  const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
+  const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth*0.5,innerHeight*0.5),0.66,0.40,0.62);composer.addPass(bloom);
+  // cinematic post: chromatic aberration + vignette that intensify toward the edges and with scroll
+  const caPass=new ShaderPass({uniforms:{tDiffuse:{value:null},uAmt:{value:0}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader:'varying vec2 vUv;uniform sampler2D tDiffuse;uniform float uAmt;void main(){vec2 cc=vUv-0.5;float r2=dot(cc,cc);vec2 dir=cc*(0.0012+uAmt*0.006)*(0.3+r2*1.6);float rr=texture2D(tDiffuse,vUv-dir).r;float gg=texture2D(tDiffuse,vUv+dir*0.5).g;float bb=texture2D(tDiffuse,vUv+dir).b;gl_FragColor=vec4(vec3(rr,gg,bb)*(1.0-r2*0.5),1.0);}'});
+  const caU=caPass.uniforms;composer.addPass(caPass);composer.addPass(new OutputPass());
+  let useBloom=true;
+  addEventListener('resize',()=>{if(!innerWidth||!innerHeight)return;/* 0pxリサイズでNaN化するのを防ぐ */camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);bloom.setSize(innerWidth*0.5,innerHeight*0.5);pU.uPix.value=Math.min(devicePixelRatio||1,2);fitFV();if(window.ScrollTrigger)ScrollTrigger.refresh();});
+
+  // ================= MANAGER + VERIFICATION UI =================
+  const STAGE_IDX={hero:0,connection:1,algorithm:2,ignition:3,voice:4,join:5};
+  const STAGE_NAME={hero:'HERO',connection:'01 CONNECTION',algorithm:'02 ALGORITHM',ignition:'03 IGNITION',voice:'04 VOICE',join:'05 JOIN'};
+  const ORDER=['hero','connection','algorithm','ignition','voice','join'];
+  // シーンごとに色を変えて温度差を出す（全寒色で寂しくならないように）：HERO冷青／CONNECTIONシアン／ALGORITHMバイオレット／IGNITION暖色の炎／VOICE緑／JOIN緑→ティール
+  const TINTS=CONFIG.tints;
+  const CAMOFF={hero:[0,0,0],connection:[-1.1,0.4,0.2],algorithm:[1.1,0.2,0],ignition:[-1.0,0,0],voice:[1.2,-0.5,0],join:[-0.5,0.3,0.1]};
+  // per-chapter 粒子の不透明度 [opacity]。IGNITION は炎で明るく、HERO は眩しすぎ防止で控えめ
+  const PSTYLE=[[0,0,0],[0.45,0,0],[0.52,0,0],[0.72,0,0],[0.55,0,0],[0.52,0,0]];
+  let lineOp=0.5,psT=PSTYLE[0];
+  let targetIdx=0, activeStage='hero', manualLock=false, armed=false, flash=0, morphT=0, joinAnim=-1;
+  const tint={a:new THREE.Color(0x123e9e),b:new THREE.Color(0x4aa0ff),ta:new THREE.Color(0x123e9e),tb:new THREE.Color(0x4aa0ff)};
+  const camT={tz:9.0,ox:0,oy:0,lk:0,tox:0,toy:0,tlk:0,kick:0};let scrollVel=0,scrollProg=0;
+  const hud=document.getElementById('hud');
+
+  function applyStage(stage){const idx=STAGE_IDX[stage];if(idx===undefined)return;const fresh=(idx!==targetIdx);if(fresh){targetIdx=idx;morphT=1;}if(stage==='join'&&fresh)joinAnim=0;activeStage=stage;
+    const tc=TINTS[idx];tint.ta.setHex(tc[0]);tint.tb.setHex(tc[1]);const o=CAMOFF[stage]||[0,0,0];camT.tox=o[0];camT.toy=o[1];camT.tlk=o[2];camT.kick=1;flash=1;psT=PSTYLE[idx];updateChips(stage);}
+  function setStage(stage){if(manualLock||!armed)return;applyStage(stage);}
+
+  const sw=document.getElementById('switch');const chips={};
+  ORDER.forEach(stage=>{const b=document.createElement('button');b.textContent=STAGE_NAME[stage].replace(/^\d+\s/,'').slice(0,4);b.title=STAGE_NAME[stage];b.dataset.stage=stage;
+    b.addEventListener('click',()=>{manualLock=false;const sec=document.querySelector('[data-stage="'+stage+'"]');if(sec&&window.lenis){window.lenis.scrollTo(sec,{duration:1.1});}applyStage(stage);});
+    sw.insertBefore(b,document.getElementById('next'));chips[stage]=b;});
+  function updateChips(stage){for(const k in chips)chips[k].classList.toggle('on',k===stage);}
+  document.getElementById('prev').addEventListener('click',()=>jump(-1));
+  document.getElementById('next').addEventListener('click',()=>jump(1));
+  function jump(d){const i=(ORDER.indexOf(activeStage)+d+ORDER.length)%ORDER.length;chips[ORDER[i]].click();}
+  addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='6'){manualLock=true;applyStage(ORDER[+e.key-1]);}else if(e.key==='ArrowRight')jump(1);else if(e.key==='ArrowLeft')jump(-1);else if(e.key==='0')manualLock=false;});
+  if(QS.has('world')){const w=QS.get('world');if(STAGE_IDX[w]!==undefined){manualLock=true;applyStage(w);}}
+
+  // ---------- Lenis + GSAP single ticker ----------
+  const lenis=new Lenis({lerp:.09,wheelMultiplier:1});window.lenis=lenis;
+  if('scrollRestoration' in history)history.scrollRestoration='manual';
+  lenis.scrollTo(0,{immediate:true});
+  const prog=document.getElementById('prog');
+  if(window.gsap){
+    gsap.registerPlugin(ScrollTrigger);
+    // スクロール後、一番近い章へスナップ（通り過ぎ防止／各章の中心=形が集合する位置で止まる）
+    let snapTO=null,snapping=false;
+    function snapNearest(){if(!armed||manualLock||snapping)return;const raw=lenis.scroll/(innerHeight*2);if(raw>5.6||raw<-0.05)return;const i=Math.max(0,Math.min(5,Math.round(raw)));const target=i*innerHeight*2;if(Math.abs(lenis.scroll-target)>4){snapping=true;lenis.scrollTo(target,{duration:0.8,onComplete:()=>{snapping=false;}});}}
+    lenis.on('scroll',(e)=>{ScrollTrigger.update();scrollVel=(e&&e.velocity)||0;if(Math.abs(scrollVel)>3)snapping=false;clearTimeout(snapTO);snapTO=setTimeout(snapNearest,150);});
+    gsap.ticker.add((time)=>{lenis.raf(time*1000);});
+    gsap.ticker.lagSmoothing(0);
+    gsap.to(camT,{tz:4.0,ease:'none',scrollTrigger:{trigger:'main',start:'top top',end:'bottom bottom',scrub:1,onUpdate:self=>{prog.style.width=(self.progress*100)+'%';scrollProg=self.progress;}}});
+    document.querySelectorAll('[data-stage]').forEach(sec=>{ScrollTrigger.create({trigger:sec,start:'top center',end:'bottom center',onEnter:()=>setStage(sec.dataset.stage),onEnterBack:()=>setStage(sec.dataset.stage)});});
+  }
+  document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();manualLock=false;lenis.scrollTo(t,{duration:1.2});}}));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.18,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  if(!touch){const lb=document.getElementById('lineCta');lb.addEventListener('mousemove',e=>{const r=lb.getBoundingClientRect();lb.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.18}px,${(e.clientY-r.top-r.height/2)*.3-3}px)`;});lb.addEventListener('mouseleave',()=>lb.style.transform='');}
+  applyStage('hero');
+
+  // ---------- green beam: gem → LINE button ----------
+  const jveilEl=document.getElementById('jveil');
+  function updateBeam(){jveilEl.classList.toggle('on',activeStage==='join');}
+
+  // ---------- render ----------
+  let last=performance.now(),acc=0,fr=0,fps=60,lowStreak=0,nebClock=0,paused=false;
+  document.addEventListener('visibilitychange',()=>{paused=document.hidden;});
+  function render(now){
+    const dt=Math.min((now-last)/1000,.05);last=now;const t=now*.001;
+    if(!isFinite(camera.aspect)){camera.aspect=(innerWidth||1280)/(innerHeight||720);camera.updateProjectionMatrix();}// NaN固着からの復帰
+    acc+=dt;fr++;if(acc>=1){fps=fr/acc;fr=0;acc=0;hud.textContent=CONFIG.brand+' · '+Math.round(fps)+' FPS · '+(STAGE_NAME[activeStage]||'');
+      if(!lowPerf){if(fps<45){if(++lowStreak>=3)degrade();}else lowStreak=0;}}
+    nebClock+=dt;if(!reduce&&nebClock>0.033){nU.uTime.value=t;nebClock=0;}
+    tint.a.lerp(tint.ta,.07);tint.b.lerp(tint.tb,.07);nU.uA.value.copy(tint.a);nU.uB.value.copy(tint.b);
+    camT.ox=lerp(camT.ox,camT.tox,.05);camT.oy=lerp(camT.oy,camT.toy,.05);camT.lk=lerp(camT.lk,camT.tlk,.05);camT.kick=lerp(camT.kick,0,.05);
+    let px=0,py=0;if(!touch){px=(ctx/innerWidth-.5);py=(cty/innerHeight-.5);}
+    const orbX=Math.sin(t*0.09)*0.55,orbY=Math.cos(t*0.07)*0.32;
+    camera.position.set(px*1.6+camT.ox+orbX,camT.oy-py*1.1+orbY,camT.tz+camT.kick*1.4);camera.lookAt(0,camT.lk,0);
+    camera.rotation.z+=Math.sin(t*0.13)*0.012;
+    scrollVel*=0.9;const sv=Math.min(1,Math.abs(scrollVel)/35);
+    nU.uWarp.value=lerp(nU.uWarp.value,sv,.12);caU.uAmt.value=lerp(caU.uAmt.value,sv,.14);
+    // PARTICLE morph: 6形をcumulative-mixで補間し、遷移ごとに散布→集合（すりガラス）
+    // 散布をスクロールに同期：各セクション=100vh なので scroll/innerHeight が章インデックス(0..5)に一致
+    const _sc=(window.lenis?window.lenis.scroll:window.scrollY)||0;
+    // 各章=200vh：前半(f<0.5)は形を保持＝静止ゾーン、後半(f0.5→1)で次の形へモーフ。これで「行きすぎて見れない」を解消
+    let _ut;
+    if(manualLock){_ut=targetIdx;}
+    else{const raw=_sc/(innerHeight||1),sec=Math.floor(raw/2),f=raw/2-sec;_ut=Math.max(0,Math.min(5,sec+ss(0.5,1.0,f)));}
+    if(!isFinite(_ut))_ut=0;if(!isFinite(pU.uIdx.value))pU.uIdx.value=0;// 0px/NaN耐性（NaN固着でFVが消えるのを防ぐ）
+    pU.uIdx.value=lerp(pU.uIdx.value,_ut,reduce?1:(manualLock?0.06:0.3));pU.uTime.value=t;
+    const _bg=CONFIG.background;nU.uField.value=(_bg==='field')?1.0:0.0;nU.uHero.value=(_bg==='field'||_bg==='nebula')?0.0:(_bg==='grid-hero')?(1.0-ss(0.1,0.7,pU.uIdx.value)):1.0;// 背景モード＝CONFIG.background
+    pU.uColor.value.copy(tint.b).lerp(_W,0.22);
+    const _pot=(pU.uIdx.value<1)?ss(0.08,0.45,pU.uIdx.value)*0.55:psT[0];partOp=lerp(partOp,_pot,.08);pU.uOpacity.value=partOp;
+    if(!reduce){if(activeStage==='hero'){particleGroup.rotation.y=lerp(particleGroup.rotation.y,fvSpin.rotation.y,0.1);particleGroup.rotation.x=lerp(particleGroup.rotation.x,fvSpin.rotation.x,0.1);}else{/* 連続回転だと絵文字等の平面シルエットが真横=線になる瞬間ができる → ±22°のゆらぎ往復に */particleGroup.rotation.y=lerp(particleGroup.rotation.y,Math.sin(t*0.14)*0.38,0.03);particleGroup.rotation.x=lerp(particleGroup.rotation.x,Math.sin(t*0.16)*0.11,0.05);}}
+    // FV金属文字：HEROで表示。スクロール(uIdx 0→1)で「序盤キープ→細かく砕けて散る」+フェードアウト
+    {const fp=Math.max(0,Math.min(1,pU.uIdx.value));fvGroup.visible=(fp<0.7);
+     if(fvBodyMat){const dd=ss(0.18,0.72,fp);fvBodyMat.userData.uD.value=dd;fvEdgeMat.userData.uD.value=dd;
+       const op=1-ss(0.22,0.62,fp);fvBodyMat.opacity=op;fvEdgeMat.opacity=op;
+       if(fvGlow)fvGlow.material.opacity=op*(0.42+0.12*Math.sin(t*0.8));
+       if(!reduce){fvSpin.rotation.y=Math.sin(t*0.30)*0.36;fvSpin.rotation.x=Math.sin(t*0.21)*0.10;fvGroup.position.y=Math.sin(t*0.4)*0.04;}}}
+    // JOIN: lift the convergence into the upper third so the text + CTA below have clear space
+    joinLift=lerp(joinLift,(activeStage==='join')?0.85:0,.05);particleGroup.position.y=joinLift;
+    // JOIN suck-in: every thread accelerates inward into the gem, then blooms into the converging hourglass
+    let gemFlare=0;
+    if(joinAnim>=0){joinAnim+=dt/1.25;let k;
+      if(joinAnim<0.34){const p=joinAnim/0.34;k=1-0.70*(p*p);}                          // accelerate inward → 0.30
+      else{const p=Math.min(1,(joinAnim-0.34)/0.66);k=0.30+0.70*(1-Math.pow(1-p,3));}   // bloom back out to 1
+      particleGroup.scale.setScalar(k);
+      gemFlare=Math.exp(-Math.pow((joinAnim-0.34)/0.16,2));
+      if(joinAnim>=1){joinAnim=-1;particleGroup.scale.setScalar(1);}}
+    // JOIN veil toggle (legibility under the hourglass)
+    updateBeam();
+    flash=lerp(flash,0,.06);bloom.strength=(activeStage==='hero'?0.34:0.30)+flash*0.14+gemFlare*0.35;
+    if(!touch){cx=lerp(cx,ctx,.18);cy=lerp(cy,cty,.18);cur.style.transform=`translate(${cx}px,${cy}px) translate(-50%,-50%)`;}
+    if(useBloom)composer.render();else renderer.render(scene,camera);
+  }
+  function degrade(){if(!useBloom)return;useBloom=false;curDPR=Math.min(curDPR,1.0);renderer.setPixelRatio(curDPR);const g=document.querySelector('.grain');if(g)g.remove();window.__err&&window.__err('軽量モードに自動切替(低FPS検知)');}
+  gsap.ticker.add((time)=>{if(!paused)render(time*1000);});
+  window.__pump=(n)=>{for(let i=0;i<(n||1);i++)render(performance.now());};// 検証用：非表示タブでも手動でフレームを進める（通常は未使用・無害）
+
+  // ---------- preloader → unlock → refresh ----------
+  const pm=document.getElementById('pm'),pbar=document.getElementById('pbar');const len=pm.getTotalLength();pm.style.strokeDasharray=len;pm.style.strokeDashoffset=len;
+  function startSite(){document.getElementById('pre').classList.add('done');document.body.classList.remove('lock');
+    requestAnimationFrame(()=>{if(window.ScrollTrigger){ScrollTrigger.refresh(true);} if(window.lenis)window.lenis.scrollTo(0,{immediate:true}); if(!manualLock)applyStage('hero'); setTimeout(()=>{armed=true;},600);});}
+  let p=0;const pi=setInterval(()=>{p+=Math.max(1,Math.round((100-p)*0.07));if(p>=100){p=100;clearInterval(pi);setTimeout(startSite,360);}pbar.style.width=p+'%';pm.style.strokeDashoffset=len*(1-p/100);},reduce?8:40);
+  addEventListener('load',()=>{if(window.ScrollTrigger)ScrollTrigger.refresh();});
+  </script>
+</body>
+</html>

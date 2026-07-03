@@ -1,59 +1,71 @@
-# Cinematic LP Kit 🌌
+# Cinematic LP Kit 🎬
 
-スクロールで世界が変わる、シネマティックな WebGL ランディングページのテンプレート。
-**プロンプトを自分のブランドに書き換えるだけで、あなた専用のLPが完成します。** コードは書けなくてOK。
+スクロールで世界が動く、シネマティックなランディングページ(LP)のテンプレート。
+**Claude Code に入れて「/start」と打つだけ。** 質問に答えていくと、コードを書かずにあなた専用のLPが完成します。
 
-![grid](https://img.shields.io/badge/WebGL-Three.js-blue) ![nocode](https://img.shields.io/badge/no--code-OK-brightgreen)
+背景は2種類から選べます：
+- 🌄 **実写写真がゆっくり動く**シネマグラフ（森・海・夜景…写真を差し替えるだけ）
+- ✨ **光の粒が形を変える**幻想演出（球→DNA→格子…絵文字の形にも）
+
+![webgl](https://img.shields.io/badge/WebGL-Three.js-blue) ![nocode](https://img.shields.io/badge/no--code-OK-brightgreen)
 
 ---
 
 ## 必要なもの
-
-- **Claude Code**（このキットの主役。プロンプトからサイトを作ってくれる）
+- **Claude Code**（このキットの主役）
 - ブラウザ（Chrome推奨）
-- 確認用に Python か Node（`python3` か `npx`。たいてい入ってる）
+- 確認用に Python か Node（たいてい入ってる）
 - 公開する場合：無料の Cloudflare アカウント
 
-## 作り方（話しかけるだけ）
+## 使い方（話しかけるだけ）
 
-1. **このフォルダで Claude Code を起動**
-   ```
-   claude
-   ```
-2. **「サイトを作りたい」と話しかける**（または `はじめかた.md` の文をコピペ）
-   → Claude が **7つくらいの質問を一つずつ**してくれます。専門用語なし。分からなければ「おまかせ」でOK。
-3. **質問に答えるだけ** → Claude が文章もデザインも作って、あなた専用のLPが完成します。
+**1. このフォルダを手に入れる**
+- GitHubから：`git clone <このリポジトリのURL>`
+- または「Code ▾ → Download ZIP」で落として解凍
 
-4. **確認 → 公開**
-   ```
-   python3 -m http.server 8803      # このフォルダで実行
-   ```
-   ブラウザで `http://localhost:8803/` を開く（更新は ⌘/Ctrl+Shift+R）。
-   よければ公開：
-   ```
-   npx wrangler login                                   # 初回だけ・ブラウザで承認
-   npx wrangler pages deploy . --project-name my-lp     # → https://my-lp.pages.dev
-   ```
-   ※ Cloudflare のダッシュボードにこのフォルダをドラッグ&ドロップでもOK。
+**2. フォルダの中で Claude Code を起動**
+```
+claude
+```
 
-## 手で直したい人へ
+**3. `/start` と打つ**
+→ Claude が7つくらいの質問を一つずつしてくれます。専門用語なし。分からなければ「おまかせ」でOK。
+（`/start` が無い環境なら「このキットでLPを作りたい」と話しかけるだけでも始まります）
 
-`index.html` の先頭コメントと、`<script type="module">` 内の **`▼▼▼ CONFIG ▼▼▼`** ブロックがすべての設定です。ここだけ書き換えれば別ブランドになります（その下の3Dエンジンは触らないこと）。
+**4. 質問に答えるだけ** → Claude が文章もデザインも決めて、`config.js` を書き換え、あなた専用のLPが完成します。
 
-- `background` … `'grid-all'` / `'grid-hero'` / `'nebula'` の3モード
-- `tints` … 各章の色 `[背景, アクセント]` を6組（16進 `0x......`）
-- フォントを変えたら `<head>` の Google Fonts `<link>` にも追加
+**5. 確認 → 公開**
+```
+python3 -m http.server 8803          # このフォルダで実行
+```
+ブラウザで `http://localhost:8803/` を開く（更新は ⌘/Ctrl+Shift+R）。よければ公開：
+```
+npx wrangler login                                   # 初回だけ・ブラウザで承認
+npx wrangler pages deploy . --project-name my-lp     # → https://my-lp.pages.dev
+```
+※ Cloudflareのダッシュボードにこのフォルダをドラッグ&ドロップでもOK。
+
+## 自分で直したい人へ
+
+編集するのは **`config.js` の1ファイルだけ**（先頭のコメントに全部説明あり）。
+- `engine` … `'photo'`(写真) / `'particles'`(光の粒) を切り替え
+- 写真は `assets/photos/` に入れて `config.js` でファイル名を指定（横長が映える）
+- 色・文章・ボタン・フォントも全部 `config.js`
+
+`index.html` と `engine-*.html` は本体なので触らないこと。
 
 ## 中身
-
 ```
 cinematic-lp-kit/
-├── index.html              ← LP本体（1ファイル完結・CONFIG駆動）
-├── CLAUDE.md               ← Claude Code への指示（自動で読まれる）
-├── はじめかた.md             ← まず読む（話すだけでLPが作れる）
-└── README.md               ← このファイル
+├── config.js              ← ここだけ編集（設定・文章・色・写真の指定）
+├── index.html             ← 入口（engineを見て切替）
+├── engine-photo.html      ← 実写シネマグラフ本体
+├── engine-particles.html  ← 光の粒子演出本体
+├── assets/photos/         ← 写真を入れる（差し替え前提のサンプル入り）
+├── CLAUDE.md              ← Claude Code への指示（自動で読まれる）
+├── .claude/commands/start.md  ← /start コマンド
+└── README.md              ← このファイル
 ```
 
 ## ライセンス / クレジット
-
-内部は Three.js / GSAP / Lenis（各CDN）。自由に使ってブランドを乗せてください。
+内部は Three.js（CDN）。自由に使ってあなたのブランドを乗せてください。
