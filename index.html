@@ -29,10 +29,14 @@
       var C = window.LP_CONFIG || {};
       var bn = document.getElementById('bn');
       if (bn && C.brand) bn.textContent = C.brand;
-      var engine = (C.engine === 'particles') ? 'particles' : 'photo';   // 既定は photo
+      // engine を正規化（大文字/前後空白/誤記に強く）。既定は photo
+      var raw = String(C.engine || '').trim().toLowerCase();
+      var engine = (raw === 'particles') ? 'particles'
+                 : (raw === 'photo' || raw === '') ? 'photo'
+                 : (console.warn('[LP_CONFIG] engine の値 "' + C.engine + '" は不正です。photo で表示します（有効値: photo / particles）。'), 'photo');
       var target = engine === 'particles' ? 'engine-particles.html' : 'engine-photo.html';
       // ?engine=particles / ?engine=photo で一時的に上書きして見比べられる
-      var q = new URLSearchParams(location.search).get('engine');
+      var q = String(new URLSearchParams(location.search).get('engine') || '').trim().toLowerCase();
       if (q === 'particles') target = 'engine-particles.html';
       if (q === 'photo') target = 'engine-photo.html';
       location.replace(target + location.hash);

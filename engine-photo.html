@@ -175,15 +175,18 @@
     if(C.tagline)q('#fxtl').textContent=C.tagline;
     if(C.location)q('#fxbr').textContent=C.location;
     if(C.preloader)q('#prelbl').textContent=C.preloader;
-    (C.chapters||[]).forEach((cc,i)=>{const sec=q('#c'+(i+1)); if(!sec)return;
+    for(let i=0;i<4;i++){const sec=q('#c'+(i+1)); if(!sec)continue;
+      const cc=(C.chapters||[])[i];
+      if(!cc){sec.style.display='none';continue;}            // 章が4つ未満なら余りは隠す（前テンプレの露出を防ぐ）
       const eb=sec.querySelector('.eyebrow'); if(eb){eb.textContent=cc.label; if(cc.accent)eb.style.color=cc.accent;}
       const idx=sec.querySelector('.idx'); if(idx&&cc.idx)idx.textContent=cc.idx;
       const h2=sec.querySelector('h2'); if(h2&&cc.title)h2.textContent=cc.title;
-      const p=sec.querySelector('p'); if(p&&cc.body)p.innerHTML=cc.body;});
+      const p=sec.querySelector('p'); if(p&&cc.body)p.innerHTML=cc.body;}
     if(C.join){const jh=q('#join h2'); if(jh&&C.join.heading){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;}
       const jp=q('#join p'); if(jp&&C.join.body)jp.innerHTML=C.join.body;
       const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1]&&C.join.ctaText)sp[1].textContent=C.join.ctaText;
-        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.target='_blank';cta.rel='noopener noreferrer';}}}
+        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.target='_blank';cta.rel='noopener noreferrer';}
+        else{cta.removeAttribute('target');cta.removeAttribute('href');cta.addEventListener('click',e=>e.preventDefault());}}}
     if(C.footer)q('#fmade').innerHTML=C.footer;
   }catch(e){window.__err&&window.__err('CONFIG適用エラー');}}
   apply();
@@ -191,9 +194,10 @@
   // ---- 写真リスト & 動きのレシピ ----
   const MOOD = (C.photoMood!=null)?C.photoMood:0.85;
   const slots = [ C.hero||{}, ...(C.chapters||[]), C.join||{} ];
-  const photos = slots.map(s=>s.photo).filter(Boolean);
+  const _fbPhoto = (slots.find(s=>s.photo)||{}).photo;   // 写真が欠けたスロットは先頭写真で埋め、動き(recipes)との添字ズレを防ぐ
+  const photos = slots.map(s=> s.photo || _fbPhoto);
   const motions = slots.map(s=>s.motion||'still');
-  if(!photos.length){window.__err&&window.__err('config.js に写真が設定されていません');}
+  if(!_fbPhoto){window.__err&&window.__err('config.js に写真が1枚も設定されていません');}
 
   // motion名 → シェーダのパラメータ（Lab由来）
   const MOTION={
@@ -213,6 +217,12 @@
   // ---- WebGL ----
   const canvas=document.getElementById('gl');
   let renderer; try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}catch(e){window.__err&&window.__err('WebGL unavailable');}
+  if(!renderer){
+    // WebGLが使えない端末：背景は出ないが、本文・CTAは必ず表示（静的LPとして成立させる）
+    document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+    const _pre=document.getElementById('pre'); if(_pre)_pre.classList.add('done');
+    const _cue=document.getElementById('cue'); if(_cue)_cue.style.opacity='0';
+  } else {
   const lowPerf = matchMedia('(hover:none)').matches || (navigator.hardwareConcurrency||8)<=4;
   renderer.setPixelRatio(Math.min(devicePixelRatio||1, lowPerf?1.4:2));
   renderer.setSize(innerWidth,innerHeight);
@@ -279,16 +289,20 @@
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
   addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);uni.uRes.value.set(innerWidth,innerHeight);});
 
-  // ---- テクスチャ読込 → プリローダー ----
+  // ---- テクスチャ読込 → プリローダー（成功・失敗どちらでも進み、必ず幕が上がる）----
   const loader=new THREE.TextureLoader();
-  const textures=[],aspects=[]; let loaded=0;
+  const textures=[],aspects=[]; let done=0;
   const pbar=document.getElementById('pbar'),pre=document.getElementById('pre');
-  photos.forEach((src,i)=>{textures[i]=loader.load(src,tx=>{aspects[i]=tx.image.width/tx.image.height;loaded++;
-    if(pbar)pbar.style.width=Math.round(loaded/photos.length*100)+'%';
-    if(loaded>=photos.length){uni.uTexA.value=textures[0];uni.uTexB.value=textures[0];uni.uAspA.value=aspects[0];uni.uAspB.value=aspects[0];
-      setTimeout(()=>pre&&pre.classList.add('done'),260);}},undefined,
-    ()=>{window.__err&&window.__err('写真が読めません: '+src);});
-    textures[i].minFilter=THREE.LinearFilter;textures[i].magFilter=THREE.LinearFilter;aspects[i]=1.6;});
+  function slotDone(){done++;
+    if(pbar)pbar.style.width=Math.round(done/photos.length*100)+'%';
+    if(done>=photos.length){const t0=textures[0]||new THREE.Texture();
+      uni.uTexA.value=t0;uni.uTexB.value=t0;uni.uAspA.value=aspects[0]||1.6;uni.uAspB.value=aspects[0]||1.6;
+      setTimeout(()=>pre&&pre.classList.add('done'),260);}}
+  photos.forEach((src,i)=>{aspects[i]=1.6;
+    textures[i]=loader.load(src, tx=>{aspects[i]=tx.image.width/tx.image.height;slotDone();}, undefined,
+      ()=>{window.__err&&window.__err('写真が読めません(ファイル名の大文字小文字・拡張子を確認): '+src); if(textures[0])textures[i]=textures[0]; slotDone();});
+    textures[i].minFilter=THREE.LinearFilter;textures[i].magFilter=THREE.LinearFilter;});
+  setTimeout(()=>pre&&pre.classList.add('done'),8000);   // 絶対保険：何があっても8秒で本文を表示
 
   // ---- 前景パーティクル ----
   const cv=document.getElementById('dust'),pc=cv.getContext('2d');
@@ -340,8 +354,11 @@
   addEventListener('scroll',updateScroll,{passive:true});
 
   // ---- テキストの出現 ----
-  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.35});
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.01,rootMargin:'0px 0px -8% 0px'});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  // IO非依存の保険：ビューに入った .reveal を必ず表示（テキストが消えないことを最優先）
+  function revealInView(){const vh=innerHeight||document.documentElement.clientHeight||800;document.querySelectorAll('.reveal:not(.in)').forEach(el=>{const r=el.getBoundingClientRect();if(r.top<vh*0.92&&r.bottom>0)el.classList.add('in');});}
+  addEventListener('scroll',revealInView,{passive:true});addEventListener('resize',revealInView);revealInView();
 
   // ---- 時計・カーソル ----
   const clock=document.getElementById('clock'),pad=n=>(n<10?'0':'')+n;
@@ -352,12 +369,14 @@
     document.querySelectorAll('a,.line-cta').forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('big'));el.addEventListener('mouseleave',()=>cur.classList.remove('big'));});}
 
   // ---- ループ ----
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;   // 動きを減らす設定なら時間を進めない
   let last=performance.now(),clk=0;
-  function loop(nw){const dt=Math.min((nw-last)/1000,.05);last=nw;clk+=dt;uni.uTime.value=clk;
+  function loop(nw){const dt=Math.min((nw-last)/1000,.05);last=nw;if(!reduce)clk+=dt;uni.uTime.value=clk;
     if(uni.uTexA.value)renderer.render(scene,camera);
-    drawParticles(clk);
+    if(!reduce)drawParticles(clk);
     requestAnimationFrame(loop);}
   updateScroll();requestAnimationFrame(loop);
+  }
   </script>
 </body>
 </html>

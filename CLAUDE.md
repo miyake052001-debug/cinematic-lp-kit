@@ -20,6 +20,8 @@
 ヒアリング中に**1回だけ**、専門語なしで見せ方をたずねる：
 「背景は ①**きれいな写真がゆっくり動く**タイプ ②**光の粒が形を変える**幻想的なタイプ、どっちが好み？　迷ったら①でいい感じにするよ」
 
+**おまかせ時の決め方**：具体的な場所・商品・世界観がある事業→`photo`（サンプル写真同梱なので写真ゼロでも即完成、あとで差し替え）。テック・未来・抽象イメージ、または写真を一切用意したくない→`particles`（写真不要）。どちらも既定で破綻しないので、迷ったら`photo`。
+
 ---
 
 ## 進め方 ― やさしくヒアリング（最重要）
@@ -57,6 +59,7 @@
   - ユーザーが写真を持っていれば、それを `assets/photos/` に入れてもらう（ファイル名を聞いて指定）。
   - 無ければ、**テーマに合うAI画像生成プロンプトを渡す**（例：パン屋→「朝の光が差し込む石窯のあるパン工房、湯気、温かい色調、横長、写真」）。ChatGPT/画像生成で作って `assets/photos/` に入れてもらう。
   - キットには最初からサンプル写真が入っている（差し替え前提）。**横長（16:9前後）**が映える。
+  - ⚠️**写真差し替えの鉄則**：config.js のファイル名は実ファイルと**大文字小文字・拡張子まで完全一致**（`.jpg`推奨）／**hero・ch1〜4・join の6スロットを全部埋める**（公開先 Cloudflare Pages は大文字小文字を区別する）。書き換えたら `assets/photos/` の実ファイル名と config の参照名が一致するか必ず突き合わせる。1枚でも不一致だと写真が黒くなる（本文は出る）。
 - **動き（`motion`）**：写真の内容に合わせて選ぶ。
 
   | motion | 動き | 合う写真 |
@@ -81,7 +84,7 @@
 |---|---|---|
 | `sphere`球 / `dna`二重螺旋 / `grid`格子 / `helix`螺旋 / `hourglass`砂時計 | | つながり・仕組み・構造・成長・収束 |
 | `torus`輪 / `heart`ハート / `leaf`葉 / `flower`花 / `wave`波 | | 縁・愛情・自然・美容・自由 |
-| `galaxy`銀河 / `mountain`山 / `crystal`結晶 / `tornado`渦 / `moon`月 / `star`星 / `cup`カップ | | 夢・挑戦・価値・変革・夜・目標・カフェ |
+| `galaxy`銀河 / `mountain`山 / `crystal`結晶 / `tornado`渦 / `moon`三日月（満月は`emoji:🌕`）/ `star`星 / `cup`カップ | | 夢・挑戦・価値・変革・夜・目標・カフェ |
 | `emoji:🍞` | **任意の絵文字シルエット** | **具体物はこれが最強**（🥐🍰☕🧘✂️🐟🎸…） |
 | `text:WORD` | 単語シルエット | キーワード（英字短め） |
 
@@ -103,6 +106,8 @@
 ## 絶対ルール
 
 - ✅ **`config.js` だけ**を編集する（写真は `assets/photos/` に入れる）。
+- ✅ engineを決めたら、その**engine側の項目だけ**を全章テーマ/物語に合わせて設定（photo→`photo`+`motion` / particles→`shape`）。もう片方の項目は既定のままでよい（無視されるだけで壊れない）。
+- ✅ 章は**必ず4つ**（増やしても表示されず、減らすと表示が乱れる）。`footer` は自ブランド用に書き換える。
 - 🚫 `index.html` / `engine-photo.html` / `engine-particles.html` は**触らない**（エンジン本体。動かなくなる）。
 - 🚫 頼まれてない機能・セクション・装飾を足さない。
 - 🚫 事実でない実績・数字を書かない（本人が言った本当のことだけ。盛らない）。
@@ -121,7 +126,7 @@
 | `join.font` / `join.shape` / `join.photo`+`join.motion` | 最終画面のフォント・形(particles)・写真(photo) | |
 | `fonts` | `google[]`・`display`・`serif`・`hero3d` | 「デザインの引き出し」参照 |
 | `palette` | `accent/accent2/accent3`・`cta/ctaInk` | CTA・JOINグラデは自動でテーマに揃う |
-| `footer` | フッター文 | HTMLタグ可 |
+| `footer` | フッター文 | HTMLタグ可。**既定はデモ署名。配布時は自ブランドの一言に必ず書き換える** |
 | `background` | 【particles】`'grid-all'`/`'grid-hero'`/`'nebula'`/`'field'` | |
 | `tints` | 【particles】各章の色 6組 | HERO/01/02/03/04/JOIN |
 | `photoMood` | 【photo】写真の抽象度 0〜1 | 0.85前後推奨 |
@@ -137,7 +142,7 @@
 ## 確認とデプロイ（ユーザーに案内する）
 
 - **確認**：このフォルダで `python3 -m http.server 8803` → ブラウザで `http://localhost:8803/`（更新は必ず ⌘/Ctrl+Shift+R）。`?engine=particles` / `?engine=photo` をURL末尾に付けると見せ方を見比べられる。
-- **公開（無料）**：`npx wrangler login`（初回・ブラウザで承認）→ `npx wrangler pages deploy . --project-name <好きな名前>` → `https://<名前>.pages.dev`。
+- **公開（無料）**：`npx wrangler login`（初回・ブラウザで承認）→ `npx wrangler pages deploy . --project-name <名前>` → `https://<名前>.pages.dev`。名前は**半角小文字の英数字とハイフンのみ**（例 `my-lp`。日本語・大文字・スペースは不可）。
   - もしくは `dash.cloudflare.com` → Workers & Pages → Pages にこのフォルダをドラッグ&ドロップ。
 
 ## 依存

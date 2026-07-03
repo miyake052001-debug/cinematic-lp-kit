@@ -1,21 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <!-- ═══════════════════════════════════════════════════════════════
-  Sukeads LP テンプレート ／ 使い方（非エンジニアOK・このファイル1枚で完結）
-  ── 複製して下記を書き換えれば別ブランドのLPになる。3D演出は共通のまま。
-  1) 編集：下の <script type="module"> 内「▼▼▼ CONFIG ▼▼▼」ブロックだけ書き換える
-       ・brand … FVの立体文字／ヘッダー／フッター／タブ名
-       ・hero.sub, chapters[].body … 各画面の文章（改行は <br>）
-       ・chapters[].title/idx/label/accent … 各章の見出し・小見出し色
-       ・join.heading/font/body/ctaText/ctaUrl … 最終画面とCTAボタン
-       ・background … 'grid-all'(全章グリッド) / 'grid-hero'(FVだけ) / 'nebula'(星雲) / 'field'(自然・畑)
-       ・tints … 各章の色 [背景, アクセント] を6組（16進 0x......）
-       ※ CONFIG より下（3Dエンジン）は触らない。
-  2) 確認：このフォルダで  python3 -m http.server 8803  → http://localhost:8803/ （更新は ⌘+Shift+R）
-  3) 公開：index.html だけ入れたフォルダで
-           npx wrangler login  →  npx wrangler pages deploy . --project-name <好きな名前>
-           （または dash.cloudflare.com → Workers&Pages → Pages にフォルダをドラッグ&ドロップ）
-  ・フォントを変える時は join.font と、<head> の Google Fonts <link> の両方に足す。
+  Cinematic LP Kit ／ 粒子モーフ・エンジン（本体・触らない）
+  ── 設定は config.js（window.LP_CONFIG）だけ。無い場合は下の既定CONFIGで動く。
+  1) 編集：config.js を書き換える（Claude Code に /start でも可）
+  2) 確認：このフォルダ全体で  python3 -m http.server 8803  → http://localhost:8803/ （更新は ⌘+Shift+R）
+  3) 公開：このフォルダ全体（config.js・index.html・engine-*.html・assets/ 一式）で
+           npx wrangler login  →  npx wrangler pages deploy . --project-name <名前>
+           （名前は半角小文字の英数字とハイフンのみ。例 my-lp。日本語・大文字・スペース不可）
+           （または dash.cloudflare.com → Workers&Pages → Pages にこのフォルダをドラッグ&ドロップ）
   ═══════════════════════════════════════════════════════════════ -->
 <head>
 <meta charset="UTF-8" />
@@ -247,6 +240,8 @@
   /* ▲▲▲ CONFIGここまで ▲▲▲ */
 
   // CONFIG → DOMへ流し込み（文言・色・フォント・CTA）。3D側は CONFIG.brand / CONFIG.tints / CONFIG.background / shape を直接参照
+  // tints を減らす/消すと配列外参照でエンジンが止まるため、6組に満たなければ既定色にフォールバック
+  const TINTS_SAFE=(CONFIG.tints&&CONFIG.tints.length>=6)?CONFIG.tints:[[0x081634,0x2f6bd6],[0x0a3a55,0x2bd6e6],[0x241a66,0x7a5cff],[0x5a1e08,0xff7a18],[0x0e3b30,0x3df0c0],[0x0c3a2e,0x2fd6a0]];
   const _hx=v=>'#'+(v&0xffffff).toString(16).padStart(6,'0');
   const _rgb=h=>{const a=parseInt(h.slice(1),16);return [(a>>16)&255,(a>>8)&255,a&255];};
   const _mix=(h1,h2,t)=>{const a=_rgb(h1),b=_rgb(h2);return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
@@ -275,14 +270,14 @@
       const lc=q('.fx.br'); if(lc)lc.textContent=C.location;
       const pl=q('#pre .lbl'); if(pl)pl.textContent=C.preloader;
       const hud0=q('#hud'); if(hud0)hud0.textContent=C.brand+' · — FPS';
-      document.querySelectorAll('main .chapter').forEach((sec,i)=>{const cc=C.chapters[i]; if(!cc)return;
+      document.querySelectorAll('main .chapter').forEach((sec,i)=>{const cc=(C.chapters||[])[i]; if(!cc){sec.style.display='none';return;}
         const eb=sec.querySelector('.eyebrow'); if(eb){eb.textContent=cc.label; if(cc.accent)eb.style.color=cc.accent;}
         const idx=sec.querySelector('.idx'); if(idx)idx.textContent=cc.idx;
         const h2=sec.querySelector('h2'); if(h2)h2.textContent=cc.title;
         const p=sec.querySelector('p'); if(p)p.innerHTML=cc.body;});
       const jh=q('#join h2'); if(jh){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;
         // JOIN見出しのグラデ＆グローを tints[JOIN] のアクセント色から自動生成（世界観と自動で揃う）
-        const jc=_hx(C.tints[5][1]);
+        const jc=_hx(TINTS_SAFE[5][1]);
         jh.style.backgroundImage=`linear-gradient(120deg,#ffffff,${_mix(jc,'#ffffff',0.45)} 46%,${jc} 76%,${_mix(jc,'#ffffff',0.6)})`;
         jh.style.filter=`drop-shadow(0 0 34px ${_rgba(jc,0.30)})`;}
       const jp=q('#join p'); if(jp)jp.innerHTML=C.join.body;
@@ -306,6 +301,12 @@
 
   const canvas=document.getElementById('gl');
   let renderer; try{renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true,powerPreference:'high-performance'});}catch(e){window.__err&&window.__err('WebGL unavailable');}
+  if(!renderer){
+    // WebGLが使えない端末：3D演出は出ないが、本文・CTAは必ず表示（静的LPとして成立させる）
+    document.body.classList.remove('lock');
+    document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+    const _pre=document.getElementById('pre'); if(_pre)_pre.classList.add('done');
+  } else {
   let curDPR=Math.min(devicePixelRatio||1, lowPerf?1.15:1.6);
   renderer.setPixelRatio(curDPR);renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0x000000,0);
   renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.78;
@@ -506,7 +507,7 @@
   const F3D={'helvetiker':'helvetiker_bold.typeface.json','optimer':'optimer_bold.typeface.json','gentilis':'gentilis_bold.typeface.json','droid-sans':'droid/droid_sans_bold.typeface.json','droid-serif':'droid/droid_serif_bold.typeface.json'};
   const _f3d=F3D[(CONFIG.fonts&&CONFIG.fonts.hero3d)||'helvetiker']||F3D.helvetiker;
   // エッジ発光・ハローの色はテーマ（tints[HERO]のアクセント）から自動生成 → どのテーマでも世界観が揃う
-  const _heroAcc=new THREE.Color(CONFIG.tints[0][1]).lerp(new THREE.Color(0xffffff),0.5);
+  const _heroAcc=new THREE.Color(TINTS_SAFE[0][1]).lerp(new THREE.Color(0xffffff),0.5);
   if(fvGlow)fvGlow.material.color.copy(_heroAcc);
   new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/fonts/'+_f3d,(font)=>{
     const tg=new TextGeometry(CONFIG.brand,{font,size:1.5,height:0.42,curveSegments:8,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.034,bevelSegments:3});
@@ -541,7 +542,7 @@
   const STAGE_NAME={hero:'HERO',connection:'01 CONNECTION',algorithm:'02 ALGORITHM',ignition:'03 IGNITION',voice:'04 VOICE',join:'05 JOIN'};
   const ORDER=['hero','connection','algorithm','ignition','voice','join'];
   // シーンごとに色を変えて温度差を出す（全寒色で寂しくならないように）：HERO冷青／CONNECTIONシアン／ALGORITHMバイオレット／IGNITION暖色の炎／VOICE緑／JOIN緑→ティール
-  const TINTS=CONFIG.tints;
+  const TINTS=TINTS_SAFE;
   const CAMOFF={hero:[0,0,0],connection:[-1.1,0.4,0.2],algorithm:[1.1,0.2,0],ignition:[-1.0,0,0],voice:[1.2,-0.5,0],join:[-0.5,0.3,0.1]};
   // per-chapter 粒子の不透明度 [opacity]。IGNITION は炎で明るく、HERO は眩しすぎ防止で控えめ
   const PSTYLE=[[0,0,0],[0.45,0,0],[0.52,0,0],[0.72,0,0],[0.55,0,0],[0.52,0,0]];
@@ -654,6 +655,7 @@
     requestAnimationFrame(()=>{if(window.ScrollTrigger){ScrollTrigger.refresh(true);} if(window.lenis)window.lenis.scrollTo(0,{immediate:true}); if(!manualLock)applyStage('hero'); setTimeout(()=>{armed=true;},600);});}
   let p=0;const pi=setInterval(()=>{p+=Math.max(1,Math.round((100-p)*0.07));if(p>=100){p=100;clearInterval(pi);setTimeout(startSite,360);}pbar.style.width=p+'%';pm.style.strokeDashoffset=len*(1-p/100);},reduce?8:40);
   addEventListener('load',()=>{if(window.ScrollTrigger)ScrollTrigger.refresh();});
+  }
   </script>
 </body>
 </html>

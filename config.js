@@ -15,7 +15,7 @@ window.LP_CONFIG = {
   tagline: '才能じゃない。設計だ。',                   // 左上の小さいコピー
   location: 'N 35.6762° / E 139.6503°',              // 左下の座標風テキスト（ただの飾り）
   preloader: 'WEAVING WORLDS',                       // 読み込み中の文字
-  hero: {
+  hero: {   // ※【particlesモード】FVの粒子形は brand の立体文字から自動生成（shape指定は不可。shape対象は ch1〜4 と join）
     sub: '凡人だからこそできる最強の戦術を。',          // ファーストビュー下のひとこと
     photo: 'assets/photos/hero.jpg',                 // 【photoモード】ファーストビューの背景写真
     motion: 'forest',                                // 【photoモード】動きのタイプ（下の一覧参照）
@@ -67,9 +67,10 @@ window.LP_CONFIG = {
      palette … UIの差し色とボタン色（cta=ボタン背景 / ctaInk=ボタン文字）
      tints  … 【particlesモード】各章の色 [背景,アクセント]（HERO/01/02/03/04/JOINの6組）      */
   palette: { accent:'#ffc46b', accent2:'#6fe9ff', accent3:'#ff7a18', cta:'#06c755', ctaInk:'#03361b' },
+  // ↓ tints は必ず6組のまま（photoモードでも消さない。particlesに切替えた時に必要）
   tints: [[0x081634,0x2f6bd6],[0x0a3a55,0x2bd6e6],[0x241a66,0x7a5cff],[0x5a1e08,0xff7a18],[0x0e3b30,0x3df0c0],[0x0c3a2e,0x2fd6a0]],
 
-  footer: 'What if I told you — <b>Claude made this.</b>',
+  footer: 'What if I told you — <b>Claude made this.</b>',   // ← デモ用の署名。配布時は自分の一言に必ず書き換える
 
   /* ▼ 【particlesモード】背景の種類 ───────────────────────────
      'grid-all'(全章グリッド) / 'grid-hero'(FVだけ→星雲) / 'nebula'(星雲) / 'field'(自然・畑)  */
