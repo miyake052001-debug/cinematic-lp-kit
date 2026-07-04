@@ -253,8 +253,8 @@
       // fonts: Google Fonts追加読込 + 見出し/本文フォントのCSS変数差し替え
       const R=document.documentElement.style;
       if(C.fonts){
-        if(C.fonts.google&&C.fonts.google.length){const l=document.createElement('link');l.rel='stylesheet';
-          l.href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
+        if(C.fonts.google&&C.fonts.google.length){const href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';
+          let l=document.getElementById('lpGF'); if(!l){l=document.createElement('link');l.id='lpGF';l.rel='stylesheet';document.head.appendChild(l);} if(l.href!==href)l.href=href;}
         if(C.fonts.display)R.setProperty('--disp',C.fonts.display);
         if(C.fonts.serif)R.setProperty('--serif',C.fonts.serif);}
       // palette: UI差し色（--gold/--cyan/--amber）とCTAボタン色
@@ -267,7 +267,7 @@
       document.title=C.brand+' — Woven Worlds';
       const b=q('.brand'); if(b&&b.lastChild)b.lastChild.nodeValue=C.brand;
       const h1=q('.hero h1'); if(h1)h1.textContent=C.brand;
-      const sub=q('.hero .sub'); if(sub)sub.textContent=C.hero.sub;
+      const sub=q('.hero .sub'); if(sub&&C.hero)sub.textContent=C.hero.sub;
       const tl=q('.fx.tl'); if(tl)tl.textContent=C.tagline;
       const lc=q('.fx.br'); if(lc)lc.textContent=C.location;
       const pl=q('#pre .lbl'); if(pl)pl.textContent=C.preloader;
@@ -277,15 +277,17 @@
         const idx=sec.querySelector('.idx'); if(idx)idx.textContent=cc.idx;
         const h2=sec.querySelector('h2'); if(h2)h2.textContent=cc.title;
         const p=sec.querySelector('p'); if(p)p.innerHTML=cc.body;});
-      const jh=q('#join h2'); if(jh){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;
+      const C_join=C.join||{};
+      const jh=q('#join h2'); if(jh){jh.innerHTML=C_join.heading||''; if(C_join.font)jh.style.fontFamily=C_join.font;
         // JOIN見出しのグラデ＆グローを tints[JOIN] のアクセント色から自動生成（世界観と自動で揃う）
         const jc=_hx(TINTS_SAFE[5][1]);
         jh.style.backgroundImage=`linear-gradient(120deg,#ffffff,${_mix(jc,'#ffffff',0.45)} 46%,${jc} 76%,${_mix(jc,'#ffffff',0.6)})`;
         jh.style.filter=`drop-shadow(0 0 34px ${_rgba(jc,0.30)})`;}
-      const jp=q('#join p'); if(jp)jp.innerHTML=C.join.body;
-      const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1])sp[1].textContent=C.join.ctaText;
-        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}
-        else{cta.removeAttribute('target');cta.removeAttribute('href');cta.addEventListener('click',e=>e.preventDefault());}}
+      const jp=q('#join p'); if(jp)jp.innerHTML=C_join.body||'';
+      const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1]&&C_join.ctaText)sp[1].textContent=C_join.ctaText;
+        if(cta._noNav){cta.removeEventListener('click',cta._noNav);cta._noNav=null;}   // 前回の無効化リスナーを外す（ライブ再適用での多重登録防止）
+        if(C_join.ctaUrl&&C_join.ctaUrl!=='#'){cta.href=C_join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}
+        else{cta.removeAttribute('target');cta.removeAttribute('href');cta._noNav=e=>e.preventDefault();cta.addEventListener('click',cta._noNav);}}
       const fb=q('.fg .big'); if(fb)fb.textContent=C.brand;
       const fm=q('.fg .made'); if(fm)fm.innerHTML=C.footer;
     }catch(e){window.__err&&window.__err('CONFIG適用エラー');}

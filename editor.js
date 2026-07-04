@@ -82,9 +82,10 @@
 
     // 見せ方
     H.push('<div class="g"><h4>見せ方</h4><div class="sw">'
-      + '<button data-eng="photo">写真が動く</button>'
+      + '<button data-eng="photo">写真</button>'
+      + '<button data-eng="hybrid">写真＋粒子</button>'
       + '<button data-eng="particles">光の粒子</button></div>'
-      + '<div style="font-size:11px;color:#6f7788;margin-top:6px">切り替えは再読み込みで反映。日本語の名前は「写真が動く」がおすすめ（光の粒子の立体文字は英字向け）</div></div>');
+      + '<div style="font-size:11px;color:#6f7788;margin-top:6px">切り替えは再読み込みで反映。日本語の名前は「写真」か「写真＋粒子」がおすすめ（光の粒子の立体文字は英字向け）</div></div>');
 
     // 背景・動き
     if (engine === 'photo') {

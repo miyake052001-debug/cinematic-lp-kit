@@ -161,8 +161,8 @@
   function apply(C){C=C||window.LP_CONFIG||{};try{
     const R=document.documentElement.style;
     if(C.fonts){
-      if(C.fonts.google&&C.fonts.google.length){const l=document.createElement('link');l.rel='stylesheet';
-        l.href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
+      if(C.fonts.google&&C.fonts.google.length){const href='https://fonts.googleapis.com/css2?'+C.fonts.google.map(f=>'family='+f.replace(/ /g,'+')).join('&')+'&display=swap';
+        let l=document.getElementById('lpGF'); if(!l){l=document.createElement('link');l.id='lpGF';l.rel='stylesheet';document.head.appendChild(l);} if(l.href!==href)l.href=href;}
       if(C.fonts.display)R.setProperty('--disp',C.fonts.display);
       if(C.fonts.serif)R.setProperty('--serif',C.fonts.serif);}
     if(C.palette){
@@ -187,8 +187,9 @@
     if(C.join){const jh=q('#join h2'); if(jh&&C.join.heading){jh.innerHTML=C.join.heading; if(C.join.font)jh.style.fontFamily=C.join.font;}
       const jp=q('#join p'); if(jp&&C.join.body)jp.innerHTML=C.join.body;
       const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1]&&C.join.ctaText)sp[1].textContent=C.join.ctaText;
+        if(cta._noNav){cta.removeEventListener('click',cta._noNav);cta._noNav=null;}   // 前回付けた無効化リスナーを必ず外す（ライブ再適用での多重登録防止）
         if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.target='_blank';cta.rel='noopener noreferrer';}
-        else{cta.removeAttribute('target');cta.removeAttribute('href');cta.addEventListener('click',e=>e.preventDefault());}}}
+        else{cta.removeAttribute('target');cta.removeAttribute('href');cta._noNav=e=>e.preventDefault();cta.addEventListener('click',cta._noNav);}}}
     if(C.footer)q('#fmade').innerHTML=C.footer;
   }catch(e){window.__err&&window.__err('CONFIG適用エラー');}}
   // FVの見出しを必ず1行に収める（日本語や長い名前でも自動で縮めてフィット）
@@ -303,6 +304,59 @@
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
   addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);uni.uRes.value.set(innerWidth,innerHeight);});
 
+  // ===== ハイブリッド：写真の上を光の粒子が舞い、章ごとに形を変える（engine:'hybrid'）=====
+  let hyb=null;
+  if((C.engine||'')==='hybrid'){
+    const HN=lowPerf?6000:16000, TAU=6.28318530718;
+    const rnd=n=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);};
+    const SH={
+      sphere:(i,n)=>{const z=1-2*(i+.5)/n,r=Math.sqrt(Math.max(0,1-z*z)),t=i*2.399;return[r*Math.cos(t)*1.5,z*1.5,r*Math.sin(t)*1.5];},
+      dna:(i,n)=>{const t=(i/n)*TAU*3,s=i%2?1:-1;return[Math.cos(t)*.7*s,(i/n-.5)*3.2,Math.sin(t)*.7*s];},
+      grid:(i,n)=>{const g=Math.max(2,Math.round(Math.cbrt(n))),x=i%g,y=Math.floor(i/g)%g,z=Math.floor(i/(g*g))%g;return[(x/(g-1)-.5)*2.6,(y/(g-1)-.5)*2.6,(z/(g-1)-.5)*2.6];},
+      helix:(i,n)=>{const t=(i/n)*TAU*4;return[Math.cos(t)*1.1,(i/n-.5)*3.4,Math.sin(t)*1.1];},
+      hourglass:(i,n)=>{const t=i/n,a=i*2.399,r=Math.abs(t-.5)*2.4+.08;return[Math.cos(a)*r,(t-.5)*3.2,Math.sin(a)*r];},
+      torus:(i,n)=>{const u=(i/n)*TAU*7,v=i*2.399;return[(1.3+.45*Math.cos(v))*Math.cos(u),.45*Math.sin(v),(1.3+.45*Math.cos(v))*Math.sin(u)];},
+      heart:(i,n)=>{const t=(i/n)*TAU,rr=.55+rnd(i)*.45,x=16*Math.pow(Math.sin(t),3),y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);return[x*.09*rr,y*.09*rr,(rnd(i+9)-.5)*.5];},
+      leaf:(i,n)=>{const t=(i/n),a=t*TAU,rr=Math.sin(a)*Math.sin(a*.5);return[Math.cos(a)*rr*1.6,(t-.5)*3.2,(rnd(i)-.5)*.4];},
+      flower:(i,n)=>{const a=i*2.399,r=Math.abs(Math.cos(a*3.5))*1.4+.15;return[Math.cos(a)*r,Math.sin(a)*r,(rnd(i)-.5)*.5];},
+      wave:(i,n)=>{const x=(rnd(i)*2-1)*2.2,z=(rnd(i+3)*2-1)*2.2;return[x,Math.sin(x*2+z*1.5)*.5,z];},
+      galaxy:(i,n)=>{const t=(i/n),arm=(i%3)*(TAU/3),a=t*TAU*1.5+arm,r=t*2.2;return[Math.cos(a)*r,(rnd(i)-.5)*.4,Math.sin(a)*r];},
+      mountain:(i,n)=>{const x=(rnd(i)*2-1)*2.2,z=(rnd(i+3)*2-1)*2.2,h=Math.max(0,1.4-Math.sqrt(x*x+z*z)*.7);return[x,h*rnd(i+7)-.6,z];},
+      star:(i,n)=>{const seg=Math.max(1,Math.floor(n/5)),a=Math.floor(i/seg)*(TAU/5),sub=(i%seg)/seg,r=(sub<.5?sub*2:2-sub*2)*1.6+.2;return[Math.cos(a)*r,Math.sin(a)*r,(rnd(i)-.5)*.4];},
+      crystal:(i,n)=>{const t=i/n,a=i*2.399,r=(t<.5?t*2:2-t*2)*1.0+.1;return[Math.cos(a)*r,(t-.5)*3.0,Math.sin(a)*r];},
+      moon:(i,n)=>{const z=1-2*(i+.5)/n,r=Math.sqrt(Math.max(0,1-z*z)),t=i*2.399;return[r*Math.cos(t)*1.5-Math.max(0,r*Math.cos(t))*.5,z*1.5,r*Math.sin(t)*1.5];},
+    };
+    const pick=s=>{ if(!s||s.indexOf('emoji:')===0||s.indexOf('text:')===0) return 'sphere'; return SH[s]?s:'sphere'; };
+    const stageShapes=[ 'galaxy', ...(C.chapters||[]).slice(0,4).map(c=>pick(c&&c.shape)), pick((C.join||{}).shape) ];
+    while(stageShapes.length<6) stageShapes.push('sphere');
+    const stages=stageShapes.map(sh=>{const fn=SH[sh]||SH.sphere,arr=new Float32Array(HN*3);for(let i=0;i<HN;i++){const p=fn(i,HN);arr[i*3]=p[0];arr[i*3+1]=p[1];arr[i*3+2]=p[2];}return arr;});
+    const cur=new Float32Array(HN*3); cur.set(stages[0]);
+    const rndv=new Float32Array(HN*3); for(let i=0;i<HN;i++){rndv[i*3]=(rnd(i)-.5)*6;rndv[i*3+1]=(rnd(i+1)-.5)*6;rndv[i*3+2]=(rnd(i+2)-.5)*6;}
+    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(cur,3));
+    const pmat=new THREE.PointsMaterial({color:new THREE.Color((C.palette&&C.palette.accent2)||'#6fe9ff'),size:lowPerf?0.03:0.02,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthTest:false,sizeAttenuation:true});
+    const pgroup=new THREE.Group(); pgroup.add(new THREE.Points(geo,pmat)); pgroup.scale.set(1.1,1.1,1.1);
+    const pscene=new THREE.Scene(); pscene.add(pgroup);
+    const pcam=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,0.1,100); pcam.position.set(0,0,5.4);
+    renderer.autoClear=false;
+    addEventListener('resize',()=>{pcam.aspect=innerWidth/innerHeight;pcam.updateProjectionMatrix();});
+    hyb={HN,stages,cur,rndv,geo,pgroup,pscene,pcam,f:0,pf:1e9,settled:false};
+  }
+  function updateHyb(dt){ if(!hyb)return; const f=hyb.f, i=Math.min(4,Math.floor(f)), j=Math.min(5,i+1), t=f-i;
+    const A=hyb.stages[i],B=hyb.stages[j],cur=hyb.cur,rv=hyb.rndv,HN=hyb.HN;
+    const scat=Math.sin(Math.min(1,Math.max(0,t))*Math.PI)*0.55;
+    const sm=reduce?1:0.12;                              // 動き削減設定なら目標形へ即スナップ
+    const still=Math.abs(f-hyb.pf)<1e-4; hyb.pf=f;
+    if(!(still&&hyb.settled)){ let maxd=0;
+      for(let k=0;k<HN;k++){const x=k*3;
+        const tx=A[x]+(B[x]-A[x])*t+rv[x]*scat*0.14, ty=A[x+1]+(B[x+1]-A[x+1])*t+rv[x+1]*scat*0.14, tz=A[x+2]+(B[x+2]-A[x+2])*t+rv[x+2]*scat*0.14;
+        const dx=(tx-cur[x])*sm, dy=(ty-cur[x+1])*sm, dz=(tz-cur[x+2])*sm;
+        cur[x]+=dx; cur[x+1]+=dy; cur[x+2]+=dz; const d=dx*dx+dy*dy+dz*dz; if(d>maxd)maxd=d;}
+      hyb.geo.attributes.position.needsUpdate=true;
+      hyb.settled = still && maxd<1e-8;                  // 静止＆収束したら次フレーム以降スキップ（GPU再アップロードも止める）
+    }
+    if(!reduce) hyb.pgroup.rotation.y += dt*0.05;
+  }
+
   // ---- テクスチャ読込 → プリローダー（成功・失敗どちらでも進み、必ず幕が上がる）----
   const loader=new THREE.TextureLoader();
   const textures=[],aspects=[]; let done=0;
@@ -347,6 +401,7 @@
     if(prog)prog.style.width=(pr*100).toFixed(1)+'%';
     if(cue)cue.style.opacity=pr<0.02?'1':'0';
     const f=pr*(S-1);
+    if(hyb)hyb.f=f;
     let i=Math.min(S-1,Math.floor(f)), j=Math.min(S-1,i+1);
     const local=f-i;
     const mix=local<0.65?0:(local-0.65)/0.35;         // 各章の後半35%で次へクロスフェード
@@ -386,7 +441,7 @@
   const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;   // 動きを減らす設定なら時間を進めない
   let last=performance.now(),clk=0;
   function loop(nw){const dt=Math.min((nw-last)/1000,.05);last=nw;if(!reduce)clk+=dt;uni.uTime.value=clk;
-    if(uni.uTexA.value)renderer.render(scene,camera);
+    if(uni.uTexA.value){ if(hyb){renderer.clear();renderer.render(scene,camera);updateHyb(dt);renderer.render(hyb.pscene,hyb.pcam);} else renderer.render(scene,camera); }
     if(!reduce)drawParticles(clk);
     requestAnimationFrame(loop);}
   updateScroll();requestAnimationFrame(loop);
