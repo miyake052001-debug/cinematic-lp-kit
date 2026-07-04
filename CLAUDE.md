@@ -142,7 +142,7 @@
 
 ## 確認とデプロイ（ユーザーに案内する）
 
-- **確認**：このフォルダで `python3 -m http.server 8803` → ブラウザで `http://localhost:8803/`（更新は必ず ⌘/Ctrl+Shift+R）。`?engine=particles` / `?engine=photo` をURL末尾に付けると見せ方を見比べられる。
+- **確認（あなた＝Claudeが自動で開く。ユーザーにコマンドを打たせない）**：config.js を書き終えたら、このフォルダで `python3 -m http.server 8803` をバックグラウンド起動（無ければ `python -m http.server 8803` / `npx --yes http-server -p 8803`）→ `http://localhost:8803/` をブラウザで開いて（Mac `open`／Windows `start`）見せる。崩れて見えたら ⌘/Ctrl+Shift+R。`?engine=particles` / `?engine=photo` で見せ方を見比べられる。ユーザーがあとで自分で開く用に「`プレビュー-Mac.command`（Windowsは `プレビュー-Windows.bat`）をダブルクリック」も案内。
 - **公開（無料）**：`npx wrangler login`（初回・ブラウザで承認）→ `npx wrangler pages deploy . --project-name <名前>` → `https://<名前>.pages.dev`。名前は**半角小文字の英数字とハイフンのみ**（例 `my-lp`。日本語・大文字・スペースは不可）。
   - もしくは `dash.cloudflare.com` → Workers & Pages → Pages にこのフォルダをドラッグ&ドロップ。
 
