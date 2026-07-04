@@ -26,6 +26,7 @@
   <script src="config.js"></script>
   <script>
     (function(){
+      try{if(/^(localhost|127\.0\.0\.1|)$/.test(location.hostname)){var _o=localStorage.getItem('LP_EDIT');if(_o)window.LP_CONFIG=JSON.parse(_o);}}catch(e){}
       var C = window.LP_CONFIG || {};
       var bn = document.getElementById('bn');
       if (bn && C.brand) bn.textContent = C.brand;

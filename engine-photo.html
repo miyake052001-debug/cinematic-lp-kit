@@ -58,7 +58,7 @@
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;display:flex;align-items:center;gap:14px;margin-bottom:24px;color:var(--gold);text-shadow:0 1px 10px rgba(0,0,0,.85)}
   .eyebrow::before{content:'';width:30px;height:1px;background:currentColor}
   .hero{align-items:center;text-align:center}
-  .hero h1{font-family:var(--disp);font-size:clamp(70px,20vw,290px);line-height:.84;letter-spacing:.015em;max-width:100%;overflow-wrap:anywhere;
+  .hero h1{font-family:var(--disp);font-size:clamp(70px,20vw,290px);line-height:.84;letter-spacing:.015em;white-space:nowrap;
     background:linear-gradient(180deg,#fff 0%,#dfe6f2 40%,#aab6cc 64%,#eef3fb 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 6px 30px rgba(0,0,0,.7)) drop-shadow(0 0 50px rgba(0,0,0,.4))}
@@ -146,6 +146,8 @@
     addEventListener('error',e=>show((e.message||'error')));addEventListener('unhandledrejection',()=>show('load error'));window.__err=show;})();
   </script>
   <script src="config.js"></script>
+  <script>/* ローカル編集(editor.js)の変更を反映。localhost限定なので公開サイトには一切影響しない */
+  try{if(/^(localhost|127\.0\.0\.1|)$/.test(location.hostname)){var _o=localStorage.getItem('LP_EDIT');if(_o)window.LP_CONFIG=JSON.parse(_o);}}catch(e){}</script>
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js"}}</script>
   <script type="module">
   import * as THREE from 'three';
@@ -156,7 +158,7 @@
   // ---- CONFIG → DOM ----
   const _rgb=h=>{const a=parseInt(h.slice(1),16);return [(a>>16)&255,(a>>8)&255,a&255];};
   const _rgba=(h,al)=>{const a=_rgb(h);return `rgba(${a[0]},${a[1]},${a[2]},${al})`;};
-  function apply(){try{
+  function apply(C){C=C||window.LP_CONFIG||{};try{
     const R=document.documentElement.style;
     if(C.fonts){
       if(C.fonts.google&&C.fonts.google.length){const l=document.createElement('link');l.rel='stylesheet';
@@ -189,7 +191,18 @@
         else{cta.removeAttribute('target');cta.removeAttribute('href');cta.addEventListener('click',e=>e.preventDefault());}}}
     if(C.footer)q('#fmade').innerHTML=C.footer;
   }catch(e){window.__err&&window.__err('CONFIG適用エラー');}}
-  apply();
+  // FVの見出しを必ず1行に収める（日本語や長い名前でも自動で縮めてフィット）
+  function fitHero(){const h=q('.hero h1'); if(!h)return; h.style.whiteSpace='nowrap'; h.style.fontSize='';
+    const avail=innerWidth*0.9; let s=parseFloat(getComputedStyle(h).fontSize)||120,g=0;
+    while(h.scrollWidth>avail && s>16 && g<160){s*=0.95;h.style.fontSize=s+'px';g++;}}
+  apply(); fitHero();
+  addEventListener('resize',fitHero); setTimeout(fitHero,300);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHero);
+  // ローカル編集パネル(editor.js)用フック：文字・色・フォント・CTA・抽象度はその場で反映（構造変更は再読み込み）
+  window.__lpEngine='photo';
+  window.__lpLiveApply=function(cfg){try{window.LP_CONFIG=cfg;apply(cfg);
+    if(cfg&&cfg.photoMood!=null&&window.__lpUni)window.__lpUni.uAbstract.value=cfg.photoMood;
+    fitHero();}catch(e){}};
 
   // ---- 写真リスト & 動きのレシピ ----
   const MOOD = (C.photoMood!=null)?C.photoMood:0.85;
@@ -236,6 +249,7 @@
     uWaterY:{value:0},uRipple:{value:0},uSwayMode:{value:0},uSway:{value:0},
     uMist:{value:0},uRays:{value:0},uRayCol:{value:new THREE.Vector3(1,1,1)},uTwinkle:{value:0},uHaze:{value:0},
   };
+  window.__lpUni=uni;   // 編集パネルから抽象度(uAbstract)を即反映するため公開
   const FRAG=`precision highp float;varying vec2 vUv;
     uniform sampler2D uTexA,uTexB;uniform float uMix,uTime,uAspA,uAspB,uAbstract;
     uniform vec2 uRes;uniform float uWaterY,uRipple,uSwayMode,uSway,uMist,uRays,uTwinkle,uHaze;uniform vec3 uRayCol;
@@ -378,5 +392,6 @@
   updateScroll();requestAnimationFrame(loop);
   }
   </script>
+  <script src="editor.js"></script>
 </body>
 </html>

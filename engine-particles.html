@@ -174,6 +174,8 @@
     addEventListener('error',e=>show((e.message||'error')));addEventListener('unhandledrejection',()=>show('load error'));window.__err=show;})();
   </script>
   <script src="config.js"></script>  <!-- 設定は config.js（window.LP_CONFIG）。無い場合は下の既定CONFIGで動く -->
+  <script>/* ローカル編集(editor.js)の変更を反映。localhost限定なので公開サイトには一切影響しない */
+  try{if(/^(localhost|127\.0\.0\.1|)$/.test(location.hostname)){var _o=localStorage.getItem('LP_EDIT');if(_o)window.LP_CONFIG=JSON.parse(_o);}}catch(e){}</script>
   <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
@@ -246,7 +248,7 @@
   const _rgb=h=>{const a=parseInt(h.slice(1),16);return [(a>>16)&255,(a>>8)&255,a&255];};
   const _mix=(h1,h2,t)=>{const a=_rgb(h1),b=_rgb(h2);return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
   const _rgba=(h,al)=>{const a=_rgb(h);return `rgba(${a[0]},${a[1]},${a[2]},${al})`;};
-  function applyConfig(){const C=CONFIG,q=s=>document.querySelector(s);
+  function applyConfig(C2){const C=C2||window.LP_CONFIG||CONFIG,q=s=>document.querySelector(s);
     try{
       // fonts: Google Fonts追加読込 + 見出し/本文フォントのCSS変数差し替え
       const R=document.documentElement.style;
@@ -289,6 +291,9 @@
     }catch(e){window.__err&&window.__err('CONFIG適用エラー');}
   }
   applyConfig();
+  // ローカル編集パネル(editor.js)用フック：文字・色・CTAはその場で反映（背景/形/フォント/立体文字の切替は再読み込み）
+  window.__lpEngine='particles';
+  window.__lpLiveApply=function(cfg){try{window.LP_CONFIG=cfg;applyConfig(cfg);}catch(e){}};
 
   const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches, touch=matchMedia('(hover:none)').matches;
   const lowPerf = touch || (navigator.hardwareConcurrency||8)<=4;
@@ -659,5 +664,6 @@
   addEventListener('load',()=>{if(window.ScrollTrigger)ScrollTrigger.refresh();});
   }
   </script>
+  <script src="editor.js"></script>
 </body>
 </html>

@@ -143,6 +143,7 @@
 ## 確認とデプロイ（ユーザーに案内する）
 
 - **確認（あなた＝Claudeが自動で開く。ユーザーにコマンドを打たせない）**：config.js を書き終えたら、このフォルダで `python3 -m http.server 8803` をバックグラウンド起動（無ければ `python -m http.server 8803` / `npx --yes http-server -p 8803`）→ `http://localhost:8803/` をブラウザで開いて（Mac `open`／Windows `start`）見せる。崩れて見えたら ⌘/Ctrl+Shift+R。`?engine=particles` / `?engine=photo` で見せ方を見比べられる。ユーザーがあとで自分で開く用に「`プレビュー-Mac.command`（Windowsは `プレビュー-Windows.bat`）をダブルクリック」も案内。
+  さらに**右下の「✎ 編集」パネル**（ローカル閲覧時だけ表示・公開サイトには出ない）で、色・文字・背景・動きをその場で変えられることを必ず伝える。ユーザーが「保存コードをコピー」した内容を貼ってきたら、それで `config.js` を丸ごと書き換えて確定する。
 - **公開（無料）**：`npx wrangler login`（初回・ブラウザで承認）→ `npx wrangler pages deploy . --project-name <名前>` → `https://<名前>.pages.dev`。名前は**半角小文字の英数字とハイフンのみ**（例 `my-lp`。日本語・大文字・スペースは不可）。
   - もしくは `dash.cloudflare.com` → Workers & Pages → Pages にこのフォルダをドラッグ&ドロップ。
 
