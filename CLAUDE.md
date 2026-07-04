@@ -111,6 +111,7 @@
 - 🚫 `index.html` / `engine-photo.html` / `engine-particles.html` は**触らない**（エンジン本体。動かなくなる）。
 - 🚫 頼まれてない機能・セクション・装飾を足さない。
 - 🚫 事実でない実績・数字を書かない（本人が言った本当のことだけ。盛らない）。
+- 🚫 **公開前にサンプルの痕跡を残さない**：既定の footer 署名「Claude made this」・既定の Sukeads LINE URL（`...570qdjfq`）を必ず自ブランド用に置換。URL未定なら `ctaUrl` は `'#'`。サンプル写真のままでも公開しない（差し替え前提）。
 
 ## config.js の各項目
 

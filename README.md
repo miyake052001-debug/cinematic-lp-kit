@@ -65,8 +65,10 @@ cinematic-lp-kit/
 ├── assets/photos/         ← 写真を入れる（差し替え前提のサンプル入り）
 ├── CLAUDE.md              ← Claude Code への指示（自動で読まれる）
 ├── .claude/commands/start.md  ← /start コマンド
+├── LICENSE                ← MITライセンス
 └── README.md              ← このファイル
 ```
 
 ## ライセンス / クレジット
-内部は Three.js（CDN）。自由に使ってあなたのブランドを乗せてください。
+本キット（コード）は **MITライセンス**（`LICENSE` 参照）。自由に使ってあなたのブランドを乗せてください。
+内部は Three.js（CDN・MIT）。**同梱写真は差し替え前提のデモ素材**なので、公開時は必ず自前の写真に差し替えてください。

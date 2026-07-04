@@ -164,7 +164,7 @@
     <section class="join" id="join" data-stage="join">
       <h2 class="reveal">JOIN THE<br>SUKEADS</h2>
       <p class="reveal" data-d="1">準備はできたか？<br>ようこそ。<br>AI×Threadsの極地へ</p>
-      <a href="https://line.me/R/ti/p/%40570qdjfq" class="line-cta" id="lineCta" target="_blank" rel="noopener noreferrer"><span class="pulse"></span><span>無料でプレゼントを受け取る</span></a>
+      <a href="#" class="line-cta" id="lineCta" target="_blank" rel="noopener noreferrer"><span class="pulse"></span><span>無料でプレゼントを受け取る</span></a>
     </section>
   </main>
   <footer><div class="fg"><div class="big">Sukeads</div><div class="made">What if I told you — <b>Claude made this.</b></div></div></footer>
@@ -282,7 +282,8 @@
         jh.style.filter=`drop-shadow(0 0 34px ${_rgba(jc,0.30)})`;}
       const jp=q('#join p'); if(jp)jp.innerHTML=C.join.body;
       const cta=q('#lineCta'); if(cta){const sp=cta.querySelectorAll('span'); if(sp[1])sp[1].textContent=C.join.ctaText;
-        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}}
+        if(C.join.ctaUrl&&C.join.ctaUrl!=='#'){cta.href=C.join.ctaUrl;cta.removeAttribute('onclick');cta.target='_blank';cta.rel='noopener';}
+        else{cta.removeAttribute('target');cta.removeAttribute('href');cta.addEventListener('click',e=>e.preventDefault());}}
       const fb=q('.fg .big'); if(fb)fb.textContent=C.brand;
       const fm=q('.fg .made'); if(fm)fm.innerHTML=C.footer;
     }catch(e){window.__err&&window.__err('CONFIG適用エラー');}
@@ -460,10 +461,11 @@
     if(spec.startsWith('emoji:'))buildGlyph(arr,spec.slice(6).trim(),true);
     else if(spec.startsWith('text:')){buildGlyph(arr,spec.slice(5).trim(),false);_glyphLate.push([arr,spec.slice(5).trim(),slot]);}
     else (SHAPES[spec]||SHAPES.sphere)(arr);}
-  buildShape(a1,(CONFIG.chapters[0]||{}).shape||'sphere',1);
-  buildShape(a2,(CONFIG.chapters[1]||{}).shape||'dna',2);
-  buildShape(a3,(CONFIG.chapters[2]||{}).shape||'grid',3);
-  buildShape(a4,(CONFIG.chapters[3]||{}).shape||'helix',4);
+  const _chs=CONFIG.chapters||[];   // chaptersキーが無くても throw しないよう保護
+  buildShape(a1,(_chs[0]||{}).shape||'sphere',1);
+  buildShape(a2,(_chs[1]||{}).shape||'dna',2);
+  buildShape(a3,(_chs[2]||{}).shape||'grid',3);
+  buildShape(a4,(_chs[3]||{}).shape||'helix',4);
   buildShape(a5,(CONFIG.join||{}).shape||'hourglass',5);
   const pgeo=new THREE.BufferGeometry();
   pgeo.setAttribute('position',new THREE.BufferAttribute(a0,3));
